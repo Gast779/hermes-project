@@ -50,10 +50,23 @@ class GrokClient:
         return resp.choices[0].message.content or ""
 
     def chat_simple(self, system: str, user: str, **kw) -> str:
-        return self.chat(
-            [{"role": "system", "content": system}, {"role": "user", "content": user}],
-            **kw,
-        )
+        try:
+            return self.chat(
+                [{"role": "system", "content": system}, {"role": "user", "content": user}],
+                **kw,
+            )
+        except Exception as e:
+            log.warning("Grok API error: %s", e)
+            return (
+                "⚠️ **XAI API Error**\n\n"
+                f"_{str(e)}_\n\n"
+                "**Щоб використовувати English Bot:**\n"
+                "1. Отримай API ключ на https://console.x.ai\n"
+                "2. Додай його в `.env`: `XAI_API_KEY=sk-...`\n\n"
+                "**English Bot — це персональний тренер англійської на базі Grok.**\n"
+                "Вміє: генерувати уроки граматики/лексики, рольові ігри, \n"
+                "перевіряти переклади, аналізувати голосові повідомлення."
+            )
 
     # ---- image ----------------------------------------------------------- #
     def chat_with_image(
