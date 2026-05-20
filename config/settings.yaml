@@ -1,0 +1,56 @@
+# Усе, що НЕ є секретом — тут. Секрети — у .env
+
+general:
+  timezone: "Europe/Kyiv"
+  log_level: "INFO"
+
+english_bot:
+  grok_model: "grok-4-0709"          # див. https://docs.x.ai/models
+  user_language: "uk"
+  target_language: "en"
+  default_level: "B1"                # A1..C2
+  topics:
+    - "daily_life"
+    - "work_it_crypto"
+    - "travel"
+    - "news_discussion"
+    - "hobbies"
+
+crypto_monitor:
+  report_schedule:                   # cron-формат (TIMEZONE з .env)
+    - "0 9 * * *"
+    - "0 15 * * *"
+    - "0 21 * * *"
+  data_source:
+    primary: "coingecko"             # coingecko | binance
+    coingecko_base: "https://api.coingecko.com/api/v3"
+    binance_base:   "https://api.binance.com"
+  top_n_for_report: 10
+  alerts:
+    enabled: true
+    poll_interval_seconds: 60        # як часто опитувати
+    thresholds:
+      pct_5m: 5.0                    # > 5% за 5 хв
+      pct_1h: 20.0                   # > 20% за 1 год
+    min_volume_usd_24h: 500000       # фільтр шит-коїнів з нульовим обʼємом
+    min_market_cap_usd: 1000000      # фільтр свіжих скамів
+    cooldown_minutes: 30             # не спамити по тій самій монеті
+
+polymarket:
+  gamma_base: "https://gamma-api.polymarket.com"
+  clob_base:  "https://clob.polymarket.com"
+  ws_base:    "wss://ws-subscriptions-clob.polymarket.com/ws"
+  chain_id: 137                      # Polygon
+  arbitrage:
+    min_edge: 0.01                   # 1% мінімальний edge для сигналу
+    min_volume_usd: 1000             # ринок з обʼємом нижче ігноруємо
+  monitor:
+    poll_interval_seconds: 15
+    price_change_threshold: 0.03     # 3% зсув ціни — сигнал
+
+notifications:
+  channels:
+    - telegram
+  formats:
+    crypto_alert: "*{symbol}* `+{pct:.1f}%` за {window} | ${price:.4f} | [chart]({url})"
+    polymarket_arb: "💰 Arb {kind}: *{question}* | edge `{edge:.2%}` | sum={sum_:.4f}"

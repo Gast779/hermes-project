@@ -1,0 +1,65 @@
+# Конфігурація skills для Hermes Dashboard.
+# Цей файл — універсальна декларація, яку зчитує hermes_adapter.py.
+# Якщо у твоєму Hermes Dashboard інший формат — адаптуй під нього.
+
+skills:
+  - id: english_learning_bot
+    name: "English Learning Bot"
+    description: "Персональний тренер англійської на базі Grok"
+    entrypoint: "main:english_chat"
+    enabled: true
+    schedule: null                      # запускається вручну з Dashboard
+    config:
+      grok_model: "grok-4-0709"
+      user_language: "uk"
+      target_language: "en"
+
+  - id: crypto_daily_reports
+    name: "Crypto Market Daily Reports"
+    description: "Звіти по крипторинку 3 рази на день"
+    entrypoint: "main:crypto_report_job"
+    enabled: true
+    schedule:
+      - "0 9 * * *"
+      - "0 15 * * *"
+      - "0 21 * * *"
+
+  - id: crypto_fast_movers
+    name: "Crypto Fast Movers Watcher"
+    description: "Real-time моніторинг різких рухів (5хв > 5%, 1год > 20%)"
+    entrypoint: "main:crypto_watch_loop"
+    enabled: true
+    schedule: "daemon"                  # постійно у фоні
+
+  - id: polymarket_arbitrage
+    name: "Polymarket Internal Arbitrage Scan"
+    description: "Сканування Polymarket на внутрішній арбітраж (top-of-book)"
+    entrypoint: "main:polymarket_scan_job"
+    enabled: true
+    schedule:
+      - "*/30 * * * *"                  # кожні 30 хв
+
+  - id: polymarket_depth_scan
+    name: "Polymarket Deep Arbitrage Scan"
+    description: "Глибокий арбітраж з урахуванням повного orderbook (повільніше)"
+    entrypoint: "main:polymarket_scan_job"
+    enabled: false
+    schedule:
+      - "0 */2 * * *"                   # раз на 2 години (важче по rate-limit)
+
+  - id: polymarket_news_linker
+    name: "Polymarket News→Markets Linker"
+    description: "Звʼязує новини з RSS-фідів із ринками Polymarket"
+    entrypoint: "main:polymarket_scan_job"
+    enabled: false
+    schedule:
+      - "*/15 * * * *"                  # кожні 15 хв
+
+  - id: polymarket_topic_monitor
+    name: "Polymarket Topic Monitor"
+    description: "Моніторинг ринків Polymarket за обраною темою"
+    entrypoint: "main:polymarket_topic_job"
+    enabled: false                       # вмикається з аргументом keyword
+    schedule: "*/5 * * * *"
+    config:
+      keyword: "trump"
