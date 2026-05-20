@@ -1,0 +1,75 @@
+# Telegram Group: Hermes_team (-1003792129186)
+# Topic mapping for 7 Skills
+# Last updated: 2026-05-21
+
+group_id: -1003792129186
+group_name: "Hermes_team"
+
+# Topic mapping: skill -> telegram topic
+topics:
+  english_learning_bot:
+    name: "🇬🇧 English Learning"
+    description: "Уроки англійської, граматика, переклади, розмовна практика"
+    thread_id: 24
+    icon: "🇬🇧"
+    skills:
+      - english_learning_bot
+
+  crypto_daily_reports:
+    name: "💰 Crypto Daily Reports"
+    description: "Триразові звіти по крипторинку (08:00, 14:00, 20:00)"
+    thread_id: 25
+    icon: "💰"
+    skills:
+      - crypto_daily_reports
+
+  crypto_fast_movers:
+    name: "🚀 Crypto Fast Movers"
+    description: "Real-time моніторинг різких рухів (>5% за 5хв, >20% за 1год)"
+    thread_id: 26
+    icon: "🚀"
+    skills:
+      - crypto_fast_movers
+
+  polymarket_arbitrage:
+    name: "🎯 Polymarket Arbitrage"
+    description: "Сканування внутрішнього арбітражу (кожні 30 хв)"
+    thread_id: 27
+    icon: "🎯"
+    skills:
+      - polymarket_arbitrage
+
+  polymarket_depth_scan:
+    name: "🔍 Polymarket Deep Scan"
+    description: "Глибокий арбітраж з урахуванням повного orderbook"
+    thread_id: 28
+    icon: "🔍"
+    skills:
+      - polymarket_depth_scan
+
+  polymarket_news_linker:
+    name: "📰 Polymarket News"
+    description: "Звʼязок RSS-ніз з ринками Polymarket"
+    thread_id: 29
+    icon: "📰"
+    skills:
+      - polymarket_news_linker
+
+  polymarket_topic_monitor:
+    name: "👁️ Polymarket Topic Monitor"
+    description: "Моніторинг ринків за обраною темою"
+    thread_id: 30
+    icon: "👁️"
+    skills:
+      - polymarket_topic_monitor
+
+# Default topic for unmatched skills
+default_topic: english_learning_bot
+
+# Delivery settings
+delivery:
+  format: markdown
+  max_length: 4096
+  split_long: true
+  include_timestamp: true
+  include_source: true
