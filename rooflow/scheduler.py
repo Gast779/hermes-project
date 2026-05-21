@@ -31,17 +31,11 @@ AGENT_MAP: dict[str, str] = {
 
 def rooflow_wrap(job_fn: Callable, agent: str, mode: str = "code") -> Callable:
     """
-    Обгортає job-функцію в RooFlow instrumentation.
-    
-    Args:
-        job_fn: Оригінальна функція job
-        agent: Ім'я агента (english_bot | crypto_monitor | polymarket_analyzer)
-        mode: Режим перед виконанням (code — для звітів, ask — для пояснень)
-    
-    Returns:
-        Обгорнута функція з автоматичним логуванням
+    Обгортає job-функцію в RooFlow instrumentation + Health Monitor.
     """
     engine = RooFlowEngine()
+    from rooflow.health_monitor import HealthMonitor
+    monitor = HealthMonitor()
 
     @functools.wraps(job_fn)
     def _wrapped() -> None:
@@ -64,8 +58,11 @@ def rooflow_wrap(job_fn: Callable, agent: str, mode: str = "code") -> Callable:
             elapsed = (datetime.utcnow() - start_time).total_seconds()
             engine._log_execution(agent, mode, f"✅ Job done: {job_name} ({elapsed:.1f}s)")
             
+            # 5. Записати в health monitor
+            monitor.record_execution(job_name, success=True)
+            
         except Exception as exc:
-            # 5. Помилка — логувати та перейти в debug
+            # 6. Помилка — логувати, health monitor, debug mode
             elapsed = (datetime.utcnow() - start_time).total_seconds()
             error_msg = f"❌ Job failed: {job_name} ({elapsed:.1f}s) — {type(exc).__name__}: {exc}"
             engine._log_execution(agent, "debug", error_msg)
@@ -79,10 +76,30 @@ def rooflow_wrap(job_fn: Callable, agent: str, mode: str = "code") -> Callable:
                 f"  - Дія: Перемкнено в debug режим\n"
                 f"  - Результат: Потрібно виправити перед наступним запуском\n"
             )
+            
+            # Health monitor — record failure
+            monitor.record_execution(job_name, success=False, error=f"{type(exc).__name__}: {exc}")
+            
+            # Telegram alert
+            try:
+                from scripts.notify_telegram import send_telegram
+                send_telegram(
+                    f"🔴 **Scheduler Alert**\n\n"
+                    f"Job: `{job_name}`\n"
+                    f"Agent: `{agent}`\n"
+                    f"Error: `{type(exc).__name__}: {exc}`\n"
+                    f"Time: {datetime.utcnow().strftime('%H:%M UTC')}\n\n"
+                    f"_Auto-switched to debug mode. Check decisionLog._",
+                    chat_id="-1003792129186",
+                    message_thread_id=25,  # crypto_daily_reports
+                )
+            except Exception:
+                pass  # Telegram alert non-critical
+            
             raise
         
         finally:
-            # 6. Повернути режим, якщо він змінився
+            # 7. Повернути режим, якщо він змінився
             current = engine.get_mode(agent)
             if current == mode and original_mode != mode and original_mode != "debug":
                 engine.switch_mode(agent, original_mode, reason=f"Job {job_name} completed")

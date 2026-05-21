@@ -292,6 +292,24 @@ def crypto_watch(
     crypto_watch_loop(interval=interval, threshold_5m=threshold_5m)
 
 
+@crypto.command("whale-alert")
+def crypto_whale_alert() -> None:
+    """🐋 Сканувати та показати whale transactions."""
+    from crypto_monitor.whale_alerts import scan_and_alert
+    
+    console.print("[bold green]🐋 Whale Alert Scan...[/]")
+    alerts = scan_and_alert()
+    
+    if not alerts:
+        console.print("[yellow]Немає significant whale moves за останній період.[/]")
+        return
+    
+    console.print(f"[bold green]Знайдено {len(alerts)} whale transaction(s):[/]\n")
+    for alert in alerts:
+        console.print(alert)
+        console.print("─" * 50)
+
+
 def crypto_watch_loop(interval: int | None = None, threshold_5m: float | None = None) -> None:
     cfg = settings()["crypto_monitor"]["alerts"]
     cg = _make_cg()
@@ -501,6 +519,38 @@ def english_deck() -> None:
         for c in due:
             t2.add_row(c.front, c.back, f"{c.interval}d", str(c.repetitions))
         console.print(t2)
+
+
+@english.command("telegram-test")
+def english_telegram_test(
+    lesson_type: str = typer.Option("grammar", help="grammar | vocab | speaking"),
+) -> None:
+    """📨 Manual override: надіслати урок в Telegram thread 24 (тест delivery)."""
+    from english_bot import GrokClient, LessonPlanner, EnglishBot
+    from english_bot.lesson_planner import LessonType
+    
+    console.print(f"[bold green]📨 Тест Telegram delivery для {lesson_type}...[/]")
+    
+    model = settings()["english_bot"]["grok_model"]
+    grok = GrokClient(model=model)
+    bot = EnglishBot(grok, LessonPlanner())
+    
+    lt = LessonType(lesson_type) if lesson_type in ["grammar", "vocab", "speaking"] else LessonType.GRAMMAR
+    lesson, text = bot.start_lesson(lesson_type=lt)
+    
+    header = f"🇬🇧 **English Lesson — {lesson.type.value.upper()}**\n\n"
+    full_text = header + text
+    
+    # Відправити
+    send_telegram(
+        full_text,
+        chat_id="-1003792129186",
+        message_thread_id=_get_topic("english"),
+    )
+    
+    console.print(f"[bold green]✅ Урок надіслано в Telegram thread 24[/]")
+    console.print(f"[dim]Тип: {lesson.type.value} | Тема: {lesson.topic}[/]")
+    console.print(f"[dim]Розмір: {len(full_text)} chars[/]")
 
 
 @english.command("quiz")
@@ -1046,6 +1096,29 @@ def rooflow_calibrate() -> None:
     console.print(f"   Вирішено: {result['resolved']}")
     console.print(f"   Середній Brier: {result['avg_brier']:.4f}" if result['avg_brier'] else "   Немає даних")
     console.print(f"   Expired: {result['expired_count']}")
+
+
+@rooflow.command("health")
+def rooflow_health() -> None:
+    """🏥 Перевірити здоров'я всіх scheduler job'ів."""
+    from rooflow.health_monitor import HealthMonitor
+    
+    monitor = HealthMonitor()
+    report = monitor.format_health_report()
+    
+    console.print(report)
+    
+    # Також відправити в Telegram
+    try:
+        from scripts.notify_telegram import send_telegram
+        send_telegram(
+            report,
+            chat_id="-1003792129186",
+            message_thread_id=25,
+        )
+        console.print("\n[dim]Health report sent to Telegram thread 25[/]")
+    except Exception:
+        pass
 
 
 # =========================================================================== #
