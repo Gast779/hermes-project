@@ -1033,6 +1033,21 @@ def rooflow_workflows() -> None:
     console.print(table)
 
 
+@rooflow.command("calibrate")
+def rooflow_calibrate() -> None:
+    """📊 Запустити щотижневу калібрацію Brier score (manual run)."""
+    from rooflow.calibration import run_weekly_calibration
+    
+    console.print("[bold green]📊 Запуск weekly calibration...[/]")
+    result = run_weekly_calibration()
+    
+    console.print(f"[bold green]✅ Calibration завершено:[/]")
+    console.print(f"   Прогнозів: {result['predictions_total']}")
+    console.print(f"   Вирішено: {result['resolved']}")
+    console.print(f"   Середній Brier: {result['avg_brier']:.4f}" if result['avg_brier'] else "   Немає даних")
+    console.print(f"   Expired: {result['expired_count']}")
+
+
 # =========================================================================== #
 # DB / HISTORY
 # =========================================================================== #
@@ -1239,6 +1254,34 @@ def polymarket_topic_job() -> None:
             message_thread_id=_get_topic("pm_topic"),
         )
 
+def weekly_calibration_job() -> None:
+    """📊 Weekly Brier Calibration → Telegram thread 30."""
+    from rooflow.calibration import run_weekly_calibration
+    run_weekly_calibration()
+
+
+def auto_sentiment_job() -> None:
+    """📊 Auto Sentiment Scan → Telegram thread 26 (кожні 6 год)."""
+    from rooflow.workflows import WorkflowRunner
+    runner = WorkflowRunner()
+    runner.run_sentiment_scan(keyword="bitcoin")
+
+
+def auto_prediction_job() -> None:
+    """🎯 Auto Prediction Packet → Telegram thread 27 (кожні 12 год)."""
+    from rooflow.workflows import WorkflowRunner
+    runner = WorkflowRunner()
+    # TODO: Trigger based on market volatility or news volume
+    # For now: scheduled scan of top Polymarket markets
+    runner.run_prediction_packet(market_question="Top PM market scan", probability=0.5)
+
+
+def dashboard_job() -> None:
+    """🤖 RooFlow Dashboard → Telegram кожні 30 хв."""
+    from rooflow.dashboard import send_dashboard
+    send_dashboard()
+
+
 # =========================================================================== #
 # SCHEDULER
 # =========================================================================== #
@@ -1272,6 +1315,18 @@ def run_scheduler() -> None:
         
         # 👁️ Topic Monitor — кожні 4 год
         {"job": polymarket_topic_job, "cron": "0 */4 * * *", "agent": "polymarket_analyzer", "mode": "code"},
+        
+        # 📊 Weekly Calibration — понеділок 10:00
+        {"job": weekly_calibration_job, "cron": "0 10 * * 1", "agent": "mirofish", "mode": "code"},
+        
+        # 📊 Auto Sentiment Scan — кожні 6 год
+        {"job": auto_sentiment_job, "cron": "0 */6 * * *", "agent": "mirofish", "mode": "orchestrate"},
+        
+        # 🎯 Auto Prediction Packet — кожні 12 год
+        {"job": auto_prediction_job, "cron": "0 */12 * * *", "agent": "mirofish", "mode": "orchestrate"},
+        
+        # 🤖 Dashboard — кожні 30 хв
+        {"job": dashboard_job, "cron": "*/30 * * * *", "agent": "mirofish", "mode": "ask"},
     ]
     
     build_rooflow_scheduler(sched, jobs_config)
