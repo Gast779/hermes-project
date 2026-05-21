@@ -109,6 +109,9 @@ class CoinGeckoClient:
                 "price_change_percentage": price_change,
             },
         )
+        if not data:
+            log.warning("CoinGecko returned no data for top markets (page %s)", page)
+            return []
         return [self._parse(c) for c in data]
 
     def get_movers(
