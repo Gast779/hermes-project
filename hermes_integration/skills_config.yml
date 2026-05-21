@@ -5,10 +5,10 @@
 skills:
   - id: english_learning_bot
     name: "English Learning Bot"
-    description: "Персональний тренер англійської на базі Grok"
-    entrypoint: "main:english_chat"
+    description: "Персональний тренер англійської на базі Grok — щоденні уроки"
+    entrypoint: "main:english_daily_job"
     enabled: true
-    schedule: null                      # запускається вручну з Dashboard
+    schedule: "0 9 * * *"                 # 09:00 щодня
     config:
       grok_model: "grok-4-0709"
       user_language: "uk"
@@ -16,50 +16,47 @@ skills:
 
   - id: crypto_daily_reports
     name: "Crypto Market Daily Reports"
-    description: "Звіти по крипторинку 3 рази на день"
+    description: "Триразові звіти по крипторинку (08:00, 14:00, 20:00)"
     entrypoint: "main:crypto_report_job"
     enabled: true
     schedule:
-      - "0 9 * * *"
-      - "0 15 * * *"
-      - "0 21 * * *"
+      - "0 8 * * *"
+      - "0 14 * * *"
+      - "0 20 * * *"
 
   - id: crypto_fast_movers
     name: "Crypto Fast Movers Watcher"
-    description: "Real-time моніторинг різких рухів (5хв > 5%, 1год > 20%)"
-    entrypoint: "main:crypto_watch_loop"
+    description: "Одноразовий скан різких рухів (>5% за 5хв) — кожні 5 хв через cron"
+    entrypoint: "main:fast_movers_job"
     enabled: true
-    schedule: "daemon"                  # постійно у фоні
+    schedule: "*/5 * * * *"                # кожні 5 хв
 
   - id: polymarket_arbitrage
     name: "Polymarket Internal Arbitrage Scan"
     description: "Сканування Polymarket на внутрішній арбітраж (top-of-book)"
     entrypoint: "main:polymarket_scan_job"
     enabled: true
-    schedule:
-      - "*/30 * * * *"                  # кожні 30 хв
+    schedule: "*/30 * * * *"               # кожні 30 хв
 
   - id: polymarket_depth_scan
     name: "Polymarket Deep Arbitrage Scan"
-    description: "Глибокий арбітраж з урахуванням повного orderbook (повільніше)"
-    entrypoint: "main:polymarket_scan_job"
-    enabled: false
-    schedule:
-      - "0 */2 * * *"                   # раз на 2 години (важче по rate-limit)
+    description: "Глибокий арбітраж з урахуванням повного orderbook"
+    entrypoint: "main:polymarket_depth_job"
+    enabled: true
+    schedule: "0 */2 * * *"                # кожні 2 години
 
   - id: polymarket_news_linker
     name: "Polymarket News→Markets Linker"
     description: "Звʼязує новини з RSS-фідів із ринками Polymarket"
-    entrypoint: "main:polymarket_scan_job"
-    enabled: false
-    schedule:
-      - "*/15 * * * *"                  # кожні 15 хв
+    entrypoint: "main:polymarket_news_job"
+    enabled: true
+    schedule: "0 */6 * * *"                # кожні 6 год
 
   - id: polymarket_topic_monitor
     name: "Polymarket Topic Monitor"
     description: "Моніторинг ринків Polymarket за обраною темою"
     entrypoint: "main:polymarket_topic_job"
-    enabled: false                       # вмикається з аргументом keyword
-    schedule: "*/5 * * * *"
+    enabled: true
+    schedule: "0 */4 * * *"                # кожні 4 год
     config:
       keyword: "trump"

@@ -925,14 +925,76 @@ def db_arb(limit: int = 20) -> None:
     console.print(table)
 
 
-# Entry points для Hermes:
-def english_chat_skill() -> None:
-    """Hermes skill: open chat session."""
-    english_chat()
+
+# =========================================================================== #
+# SCHEDULED JOBS — 7 Skills (Hermes Admin config)
+# =========================================================================== #
+
+# Telegram Topic IDs
+def _get_topic(skill_name: str) -> int:
+    topics = {
+        "english": 24,
+        "crypto_report": 25,
+        "fast_movers": 26,
+        "pm_arb": 27,
+        "pm_depth": 28,
+        "pm_news": 29,
+        "pm_topic": 30,
+    }
+    return topics.get(skill_name, 24)
+
+
+def english_daily_job() -> None:
+    """🇬🇧 English Daily Lesson → Telegram thread 24."""
+    from english_bot import GrokClient, LessonPlanner, EnglishBot
+    model = settings()["english_bot"]["grok_model"]
+    grok = GrokClient(model=model)
+    bot = EnglishBot(grok, LessonPlanner())
+    lesson, text = bot.start_lesson()
+    
+    header = f"🇬🇧 **English Lesson — {lesson.type.value.upper()}**\n\n"
+    send_telegram(
+        header + text,
+        chat_id="-1003792129186",
+        message_thread_id=_get_topic("english"),
+    )
+
+
+def crypto_report_job() -> None:
+    """💰 Crypto Daily Report → Telegram thread 25."""
+    cg = _make_cg()
+    try:
+        tz = settings()["general"]["timezone"]
+        top_n = settings()["crypto_monitor"]["top_n_for_report"]
+        report = generate_daily_report(cg, timezone=tz, top_n=top_n)
+    finally:
+        cg.close()
+    send_telegram(
+        report,
+        chat_id="-1003792129186",
+        message_thread_id=_get_topic("crypto_report"),
+    )
+
+
+def fast_movers_job() -> None:
+    """🚀 Fast Movers Scan → Telegram thread 26 (one-shot)."""
+    import subprocess
+    result = subprocess.run(
+        ["python", "scripts/fast_movers_scan.py"],
+        capture_output=True,
+        text=True,
+        cwd=str(Path(__file__).parent),
+    )
+    if result.returncode == 1 and result.stdout:  # Були алерти
+        send_telegram(
+            result.stdout,
+            chat_id="-1003792129186",
+            message_thread_id=_get_topic("fast_movers"),
+        )
 
 
 def polymarket_scan_job() -> None:
-    """Hermes skill: scheduled scan + telegram."""
+    """🎯 Polymarket Arbitrage Scan → Telegram thread 27."""
     with PolymarketClient() as client:
         cfg = settings()["polymarket"]["arbitrage"]
         finder = InternalArbitrageFinder(
@@ -940,41 +1002,117 @@ def polymarket_scan_job() -> None:
         )
         opps = finder.find()
     if opps:
-        send_telegram(format_arbitrage_report(opps))
+        send_telegram(
+            format_arbitrage_report(opps),
+            chat_id="-1003792129186",
+            message_thread_id=_get_topic("pm_arb"),
+        )
 
 
-def polymarket_topic_job(keyword: str = "trump") -> None:
-    """Hermes skill: scheduled topic monitor tick."""
+def polymarket_depth_job() -> None:
+    """🔍 Polymarket Deep Scan → Telegram thread 28."""
+    from polymarket_analyzer.depth_arbitrage import DepthArbitrageFinder
+    
+    results = []
     with PolymarketClient() as client:
-        mon = TopicMonitor(client, keyword)
+        markets = client.fetch_markets(active=True, max_total=100)
+        finder = DepthArbitrageFinder(
+            client,
+            min_edge_per_share=0.005,
+            min_capital_usdc=50.0,
+            max_slippage_bps=200.0,
+        )
+        for i, m in enumerate(markets, 1):
+            log.info("[%s/%s] depth-analyze %s", i, len(markets), m.slug)
+            r = finder.analyze(m)
+            if r:
+                results.append(r)
+    
+    results.sort(key=lambda r: r.expected_profit_usdc, reverse=True)
+    if results:
+        lines = [f"🔍 **Deep Arbitrage — {len(results)} opportunities**"]
+        for r in results[:20]:
+            lines.append(
+                f"• {r.question[:50]}…\n"
+                f"  Edge: {r.edge_per_share:+.3%} | Capital: ${r.max_capital_usdc:,.0f} | "
+                f"Profit: ${r.expected_profit_usdc:,.2f} | {r.kind}"
+            )
+        send_telegram(
+            "\n".join(lines),
+            chat_id="-1003792129186",
+            message_thread_id=_get_topic("pm_depth"),
+        )
+
+
+def polymarket_news_job() -> None:
+    """📰 Polymarket News Linker → Telegram thread 29."""
+    from polymarket_analyzer.news_linker import NewsLinker, format_news_links
+    
+    with PolymarketClient() as client:
+        linker = NewsLinker(client, min_score=0.25, max_markets=300)
+        try:
+            matches = linker.link()
+        finally:
+            linker.close()
+    if matches:
+        send_telegram(
+            format_news_links(matches),
+            chat_id="-1003792129186",
+            message_thread_id=_get_topic("pm_news"),
+        )
+
+
+def polymarket_topic_job() -> None:
+    """👁️ Polymarket Topic Monitor → Telegram thread 30."""
+    with PolymarketClient() as client:
+        mon = TopicMonitor(client, "trump")
         report = mon.tick()
     if report.arbitrage or report.significant_changes:
-        send_telegram(format_topic_report(report))
-
+        send_telegram(
+            format_topic_report(report),
+            chat_id="-1003792129186",
+            message_thread_id=_get_topic("pm_topic"),
+        )
 
 # =========================================================================== #
 # SCHEDULER
 # =========================================================================== #
 @app.command("scheduler")
 def run_scheduler() -> None:
-    """Запустити всі завдання за розкладом (blocking)."""
+    """🚀 Запустити всі 7 Skills за розкладом (blocking)."""
     tz = settings()["general"]["timezone"]
     sched = build_scheduler(timezone=tz)
 
-    # Створити RooFlow-обгорнуті job'и
+    # 7 Skills — повний розклад (Hermes Admin config)
     jobs_config = [
-        {"job": crypto_report_job, "cron": "0 9 * * *", "agent": "crypto_monitor", "mode": "code"},
-        {"job": crypto_report_job, "cron": "0 15 * * *", "agent": "crypto_monitor", "mode": "code"},
-        {"job": crypto_report_job, "cron": "0 21 * * *", "agent": "crypto_monitor", "mode": "code"},
+        # 🇬🇧 English — 09:00 щодня
+        {"job": english_daily_job, "cron": "0 9 * * *", "agent": "english_bot", "mode": "code"},
+        
+        # 💰 Crypto Reports — 08:00, 14:00, 20:00
+        {"job": crypto_report_job, "cron": "0 8 * * *", "agent": "crypto_monitor", "mode": "code"},
+        {"job": crypto_report_job, "cron": "0 14 * * *", "agent": "crypto_monitor", "mode": "code"},
+        {"job": crypto_report_job, "cron": "0 20 * * *", "agent": "crypto_monitor", "mode": "code"},
+        
+        # 🚀 Fast Movers — кожні 5 хв
+        {"job": fast_movers_job, "cron": "*/5 * * * *", "agent": "crypto_monitor", "mode": "code"},
+        
+        # 🎯 Polymarket Arbitrage — кожні 30 хв
         {"job": polymarket_scan_job, "cron": "*/30 * * * *", "agent": "polymarket_analyzer", "mode": "code"},
+        
+        # 🔍 Deep Scan — кожні 2 год
+        {"job": polymarket_depth_job, "cron": "0 */2 * * *", "agent": "polymarket_analyzer", "mode": "code"},
+        
+        # 📰 News Linker — кожні 6 год
+        {"job": polymarket_news_job, "cron": "0 */6 * * *", "agent": "polymarket_analyzer", "mode": "code"},
+        
+        # 👁️ Topic Monitor — кожні 4 год
+        {"job": polymarket_topic_job, "cron": "0 */4 * * *", "agent": "polymarket_analyzer", "mode": "code"},
     ]
-    
-    # Fast movers — окремий процес (daemon, не cron)
-    # Запускай окремо: `python main.py crypto watch`.
     
     build_rooflow_scheduler(sched, jobs_config)
 
-    console.print("[bold green]Scheduler started.[/] Активні задачі:")
+    console.print("[bold green]🚀 Scheduler started.[/] 7 Skills активні:")
+    console.print(f"  Всього jobs: {len(jobs_config)}")
     for job in sched.get_jobs():
         console.print(f"  • {job.name} → {job.trigger}")
     
@@ -983,7 +1121,7 @@ def run_scheduler() -> None:
     for agent in ("english_bot", "crypto_monitor", "polymarket_analyzer"):
         engine.append_memory_bank(
             agent, "activeContext.md",
-            f"\n- **{datetime.utcnow().isoformat()[:19]}** — Scheduler started\n"
+            f"\n- **{datetime.utcnow().isoformat()[:19]}** — 7-Skill Scheduler started\n"
             f"  - Активні jobs: {len(jobs_config)}\n"
             f"  - Режим: {engine.get_mode(agent)}\n"
         )

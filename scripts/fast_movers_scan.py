@@ -2,6 +2,7 @@
 """
 Одноразовий скан fast-movers для cron (не daemon).
 Використовує FastMoversWatcher.tick() один раз і виходить.
+Надсилає алерти в Telegram thread 26 (crypto_fast_movers).
 """
 from __future__ import annotations
 
@@ -14,6 +15,11 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from crypto_monitor import CoinGeckoClient, FastMoversWatcher
 from crypto_monitor.alerts import FastMoverAlert
+from scripts.notify_telegram import send_telegram
+
+# Telegram topic для fast movers
+FAST_MOVERS_THREAD_ID = 26
+FAST_MOVERS_CHAT_ID = "-1003792129186"
 
 def format_alert(a: FastMoverAlert) -> str:
     emoji = "🚀" if a.pct_change > 0 else "📉"
@@ -44,9 +50,19 @@ def main():
     n = watcher.tick()
 
     if alerts:
-        print("🚀 **Fast Movers Alert**\n")
-        print("\n\n".join(alerts))
-        print(f"\n_Виявлено {len(alerts)} сигнал(ів)_")
+        header = "🚀 **Fast Movers Alert**\n\n"
+        body = "\n\n".join(alerts)
+        footer = f"\n\n_Виявлено {len(alerts)} сигнал(ів)_"
+        full_message = header + body + footer
+        
+        # Відправити в Telegram
+        send_telegram(
+            full_message,
+            chat_id=FAST_MOVERS_CHAT_ID,
+            message_thread_id=FAST_MOVERS_THREAD_ID,
+        )
+        
+        print(full_message)
     else:
         print("🟢 Fast Movers: різких рухів не виявлено.")
 
