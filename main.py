@@ -17,6 +17,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import typer
@@ -57,6 +58,8 @@ from polymarket_analyzer.realtime import PolymarketRealtime
 from polymarket_analyzer.reporter import format_cross_market_report
 from scripts.notify_telegram import send_telegram
 from rooflow.engine import RooFlowEngine, MODE_DESCRIPTIONS
+from rooflow.scheduler import rooflow_wrap, build_rooflow_scheduler
+from rooflow.skills_sync import sync_skills, sync_single_skill
 
 setup_logging()
 log = logging.getLogger("hermes")
@@ -678,6 +681,8 @@ def rooflow_status() -> None:
     data = engine.dashboard()
 
     console.rule("[bold magenta]🎭 RooFlow Multi-Agent Dashboard[/]")
+    
+    # Статус агентів
     for agent, info in data["agents"].items():
         mode_icon = {"architect": "🏗️", "code": "💻", "debug": "🐛", "ask": "❓", "orchestrate": "🎭"}.get(info["mode"], "❓")
         console.print(f"\n[bold]{agent}[/]  {mode_icon} {info['mode']}")
@@ -686,8 +691,24 @@ def rooflow_status() -> None:
         console.print(f"   [dim]Перемикань режимів:[/] {info['history_count']}")
         console.print(f"   [dim]Оновлено:[/] {info['last_updated'][:19]}")
 
+    # Active handoffs
+    handoffs_content = engine.read_shared("handoffs.md")
+    active_count = handoffs_content.count("🔴 active")
+    completed_count = handoffs_content.count("🟢 completed")
+    if active_count > 0 or completed_count > 0:
+        console.print(f"\n[bold]Handoffs:[/] 🔴 {active_count} active | 🟢 {completed_count} completed")
+    
+    # Skills info (якщо є)
+    try:
+        from hermes_integration.hermes_adapter import load_skills
+        skills = load_skills()
+        active_skills = [s for s in skills if s.enabled]
+        console.print(f"\n[bold]Skills:[/] {len(active_skills)} active / {len(skills)} total")
+    except Exception:
+        pass  # skills config не обов'язковий
+
     if data["shared_files"]:
-        console.print("\n[bold]Shared Memory Bank:[/]")
+        console.print(f"\n[bold]Shared Memory:[/] {len(data['shared_files'])} files")
         for fname, fsize in data["shared_files"].items():
             console.print(f"   • {fname} ({fsize} bytes)")
 
@@ -768,6 +789,83 @@ def rooflow_agents() -> None:
     for mode, desc in MODE_DESCRIPTIONS.items():
         console.print(f"\n{desc}")
     console.print("\n[dim]Агенти: english_bot, crypto_monitor, polymarket_analyzer[/]")
+
+
+@rooflow.command("sync-skills")
+def rooflow_sync_skills() -> None:
+    """🔄 Синхронізувати Hermes skills з RooFlow Memory Bank."""
+    results = sync_skills()
+    console.print("[bold green]🔄 Skills синхронізовано![/]")
+    for agent, skill_ids in results.items():
+        console.print(f"\n[bold]{agent}:[/]")
+        for sid in skill_ids:
+            console.print(f"  • {sid}")
+
+
+@rooflow.command("sync-skill")
+def rooflow_sync_single(skill_id: str = typer.Argument(..., help="ID skill для синхронізації")) -> None:
+    """🔄 Синхронізувати один skill з RooFlow Memory Bank."""
+    success = sync_single_skill(skill_id)
+    if success:
+        console.print(f"[bold green]✅ Skill {skill_id} синхронізовано[/]")
+    else:
+        console.print(f"[bold red]❌ Skill {skill_id} не знайдено або не може бути змаплено[/]")
+
+
+@rooflow.command("execution-log")
+def rooflow_execution_log(
+    agent: str = typer.Option("", help="Фільтр за агентом (english_bot | crypto_monitor | polymarket_analyzer)"),
+    lines: int = typer.Option(20, help="Кількість останніх записів"),
+) -> None:
+    """📋 Переглянути execution log."""
+    engine = RooFlowEngine()
+    content = engine.read_shared("executionLog.md")
+    
+    if not content or "## Записи" not in content:
+        console.print("[yellow]Execution log порожній.[/]")
+        return
+    
+    # Парсимо записи
+    lines_list = content.split("\n")
+    entries = [l for l in lines_list if l.strip().startswith("-") and (not agent or f"[{agent}]" in l or f"[{agent.upper()}]" in l)]
+    
+    console.rule(f"[bold cyan]📋 Execution Log {'— ' + agent if agent else ''}[/]")
+    for entry in entries[-lines:]:
+        console.print(entry)
+
+
+@rooflow.command("jobs")
+def rooflow_jobs() -> None:
+    """📅 Переглянути заплановані cron job'и."""
+    try:
+        from hermes_integration.hermes_adapter import load_skills
+        skills = load_skills()
+        
+        console.rule("[bold green]📅 Scheduled Jobs[/]")
+        table = Table()
+        table.add_column("Job Name")
+        table.add_column("Agent")
+        table.add_column("Schedule")
+        table.add_column("Status")
+        
+        for skill in skills:
+            if skill.schedule and skill.schedule != "null":
+                agent = "unknown"
+                for prefix, a in {"english": "english_bot", "crypto": "crypto_monitor", "polymarket": "polymarket_analyzer"}.items():
+                    if prefix in skill.id.lower():
+                        agent = a
+                        break
+                
+                sched_str = str(skill.schedule)
+                if isinstance(skill.schedule, list):
+                    sched_str = "\n".join(skill.schedule)
+                
+                status = "✅ enabled" if skill.enabled else "⏸️ disabled"
+                table.add_row(skill.name, agent, sched_str, status)
+        
+        console.print(table)
+    except Exception as e:
+        console.print(f"[yellow]Помилка завантаження jobs: {e}[/]")
 
 
 # =========================================================================== #
@@ -863,19 +961,33 @@ def run_scheduler() -> None:
     tz = settings()["general"]["timezone"]
     sched = build_scheduler(timezone=tz)
 
-    # Crypto reports
-    for cron in settings()["crypto_monitor"]["report_schedule"]:
-        add_cron_job(sched, crypto_report_job, cron, name=f"crypto-report-{cron}")
-
-    # Polymarket arbitrage scan
-    add_cron_job(sched, polymarket_scan_job, "*/30 * * * *", name="polymarket-scan")
-
-    # Fast movers — окремий процес, бо це не cron, а daemon.
+    # Створити RooFlow-обгорнуті job'и
+    jobs_config = [
+        {"job": crypto_report_job, "cron": "0 9 * * *", "agent": "crypto_monitor", "mode": "code"},
+        {"job": crypto_report_job, "cron": "0 15 * * *", "agent": "crypto_monitor", "mode": "code"},
+        {"job": crypto_report_job, "cron": "0 21 * * *", "agent": "crypto_monitor", "mode": "code"},
+        {"job": polymarket_scan_job, "cron": "*/30 * * * *", "agent": "polymarket_analyzer", "mode": "code"},
+    ]
+    
+    # Fast movers — окремий процес (daemon, не cron)
     # Запускай окремо: `python main.py crypto watch`.
+    
+    build_rooflow_scheduler(sched, jobs_config)
 
     console.print("[bold green]Scheduler started.[/] Активні задачі:")
     for job in sched.get_jobs():
         console.print(f"  • {job.name} → {job.trigger}")
+    
+    # Оновити activeContext для всіх агентів
+    engine = RooFlowEngine()
+    for agent in ("english_bot", "crypto_monitor", "polymarket_analyzer"):
+        engine.append_memory_bank(
+            agent, "activeContext.md",
+            f"\n- **{datetime.utcnow().isoformat()[:19]}** — Scheduler started\n"
+            f"  - Активні jobs: {len(jobs_config)}\n"
+            f"  - Режим: {engine.get_mode(agent)}\n"
+        )
+    
     try:
         sched.start()
     except (KeyboardInterrupt, SystemExit):
