@@ -485,6 +485,41 @@ def english_deck() -> None:
         console.print(t2)
 
 
+@english.command("quiz")
+def english_quiz(
+    kind: str = typer.Argument("mixed", help="grammar | vocab | mixed"),
+    count: int = typer.Option(5, help="Кількість питань"),
+    level: str = typer.Option("B1", help="CEFR рівень"),
+) -> None:
+    """🧠 Інтерактивний квіз — grammar, vocab або mixed."""
+    if kind not in ("grammar", "vocab", "mixed"):
+        raise typer.BadParameter(f"Unknown kind: {kind}")
+    grok = GrokClient()
+    engine = QuizEngine(grok, level=level)
+    session = engine.start(kind=kind, count=count)  # type: ignore[arg-type]
+
+    console.print(f"[bold green]🧠 {kind.upper()} Quiz — {len(session.questions)} questions[/]\n")
+    for q in session.questions:
+        console.rule(f"Question {q.id}")
+        console.print(f"[bold]{q.question}[/]\n")
+        for i, opt in enumerate(q.options, start=1):
+            letter = chr(64 + i)  # A, B, C, D
+            console.print(f"   {letter}. {opt}")
+        choice_raw = console.input("Відповідь (A-D): ").strip().upper()
+        choice_map = {"A": 0, "B": 1, "C": 2, "D": 3}
+        choice_idx = choice_map.get(choice_raw, -1)
+        correct, explanation = engine.record_answer(session, q.id, choice_idx)
+        if correct:
+            console.print(f"[green]✅ Правильно![/]\n")
+        else:
+            correct_letter = chr(65 + q.correct_index)
+            console.print(f"[red]❌ Ні. Правильна: {correct_letter}. {q.options[q.correct_index]}[/]")
+        console.print(f"[dim]💡 {explanation}[/]\n")
+
+    result = engine.finish(session)
+    console.rule(f"[bold]Результат: {result['correct']}/{result['total']} ({result['score_pct']}%)[/]")
+
+
 @english.command("podcast")
 def english_podcast(
     topic: str = typer.Option("", help="Тема діалогу (порожньо = випадкова)"),
