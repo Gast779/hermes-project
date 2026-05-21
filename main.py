@@ -715,12 +715,12 @@ def rooflow_status() -> None:
 
 @rooflow.command("mode")
 def rooflow_mode(
-    agent: str = typer.Argument(..., help="english_bot | crypto_monitor | polymarket_analyzer"),
+    agent: str = typer.Argument(..., help="english_bot | crypto_monitor | polymarket_analyzer | mirofish"),
     mode: str = typer.Argument(..., help="architect | code | debug | ask | orchestrate"),
     reason: str = typer.Option("", help="Причина перемикання"),
 ) -> None:
     """🔄 Перемкнути RooFlow режим для агента."""
-    if agent not in ("english_bot", "crypto_monitor", "polymarket_analyzer"):
+    if agent not in ("english_bot", "crypto_monitor", "polymarket_analyzer", "mirofish"):
         raise typer.BadParameter(f"Unknown agent: {agent}")
     if mode not in ("architect", "code", "debug", "ask", "orchestrate"):
         raise typer.BadParameter(f"Unknown mode: {mode}")
@@ -736,7 +736,7 @@ def rooflow_mode(
 
 @rooflow.command("memory")
 def rooflow_memory(
-    agent: str = typer.Argument(..., help="english_bot | crypto_monitor | polymarket_analyzer | shared"),
+    agent: str = typer.Argument(..., help="english_bot | crypto_monitor | polymarket_analyzer | mirofish | shared"),
     file: str = typer.Argument(..., help="Файл Memory Bank (напр. activeContext.md)"),
 ) -> None:
     """📝 Прочитати Memory Bank файл."""
@@ -757,9 +757,9 @@ def rooflow_handoff(
     deliverables: str = typer.Option("", help="Результати через кому"),
 ) -> None:
     """📤 Створити handoff між агентами."""
-    if from_agent not in ("english_bot", "crypto_monitor", "polymarket_analyzer"):
+    if from_agent not in ("english_bot", "crypto_monitor", "polymarket_analyzer", "mirofish"):
         raise typer.BadParameter(f"Unknown from_agent: {from_agent}")
-    if to_agent not in ("english_bot", "crypto_monitor", "polymarket_analyzer"):
+    if to_agent not in ("english_bot", "crypto_monitor", "polymarket_analyzer", "mirofish"):
         raise typer.BadParameter(f"Unknown to_agent: {to_agent}")
 
     engine = RooFlowEngine()
@@ -788,7 +788,7 @@ def rooflow_agents() -> None:
     console.rule("[bold]🎭 RooFlow Agents[/]")
     for mode, desc in MODE_DESCRIPTIONS.items():
         console.print(f"\n{desc}")
-    console.print("\n[dim]Агенти: english_bot, crypto_monitor, polymarket_analyzer[/]")
+    console.print("\n[dim]Агенти: english_bot, crypto_monitor, polymarket_analyzer, mirofish[/]")
 
 
 @rooflow.command("sync-skills")
@@ -814,7 +814,7 @@ def rooflow_sync_single(skill_id: str = typer.Argument(..., help="ID skill дл�
 
 @rooflow.command("execution-log")
 def rooflow_execution_log(
-    agent: str = typer.Option("", help="Фільтр за агентом (english_bot | crypto_monitor | polymarket_analyzer)"),
+    agent: str = typer.Option("", help="Фільтр за агентом (english_bot | crypto_monitor | polymarket_analyzer | mirofish)"),
     lines: int = typer.Option(20, help="Кількість останніх записів"),
 ) -> None:
     """📋 Переглянути execution log."""
@@ -851,7 +851,7 @@ def rooflow_jobs() -> None:
         for skill in skills:
             if skill.schedule and skill.schedule != "null":
                 agent = "unknown"
-                for prefix, a in {"english": "english_bot", "crypto": "crypto_monitor", "polymarket": "polymarket_analyzer"}.items():
+                for prefix, a in {"english": "english_bot", "crypto": "crypto_monitor", "polymarket": "polymarket_analyzer", "mirofish": "mirofish"}.items():
                     if prefix in skill.id.lower():
                         agent = a
                         break
@@ -1118,7 +1118,7 @@ def run_scheduler() -> None:
     
     # Оновити activeContext для всіх агентів
     engine = RooFlowEngine()
-    for agent in ("english_bot", "crypto_monitor", "polymarket_analyzer"):
+    for agent in ("english_bot", "crypto_monitor", "polymarket_analyzer", "mirofish"):
         engine.append_memory_bank(
             agent, "activeContext.md",
             f"\n- **{datetime.utcnow().isoformat()[:19]}** — 7-Skill Scheduler started\n"

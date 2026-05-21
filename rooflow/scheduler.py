@@ -25,6 +25,7 @@ AGENT_MAP: dict[str, str] = {
     "polymarket-scan": "polymarket_analyzer",
     "english-daily": "english_bot",
     "english-lesson": "english_bot",
+    "mirofish": "mirofish",
 }
 
 

@@ -29,6 +29,7 @@ SKILL_TO_AGENT: dict[str, str] = {
     "english": "english_bot",
     "crypto": "crypto_monitor",
     "polymarket": "polymarket_analyzer",
+    "mirofish": "mirofish",
 }
 
 
