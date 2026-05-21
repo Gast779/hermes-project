@@ -56,6 +56,7 @@ from polymarket_analyzer.cross_market import CrossMarketAnalyzer, KalshiClient
 from polymarket_analyzer.realtime import PolymarketRealtime
 from polymarket_analyzer.reporter import format_cross_market_report
 from scripts.notify_telegram import send_telegram
+from rooflow.engine import RooFlowEngine, MODE_DESCRIPTIONS
 
 setup_logging()
 log = logging.getLogger("hermes")
@@ -65,9 +66,11 @@ app = typer.Typer(no_args_is_help=True, help="Hermes Multi-Agent System")
 poly = typer.Typer(help="Polymarket аналітика")
 crypto = typer.Typer(help="Криптовалютні звіти та алерти")
 english = typer.Typer(help="Тренер англійської")
+rooflow = typer.Typer(help="RooFlow multi-agent orchestration")
 app.add_typer(poly, name="polymarket")
 app.add_typer(crypto, name="crypto")
 app.add_typer(english, name="english")
+app.add_typer(rooflow, name="rooflow")
 
 
 # =========================================================================== #
@@ -663,6 +666,108 @@ def english_stats() -> None:
         console.print("\n[bold red]⚠ Слабкі місця:[/]")
         for spot in data["weak_spots"]:
             console.print(f"  • {spot}")
+
+
+# =========================================================================== #
+# ROOFLOW
+# =========================================================================== #
+@rooflow.command("status")
+def rooflow_status() -> None:
+    """📊 RooFlow dashboard — статус всіх агентів."""
+    engine = RooFlowEngine()
+    data = engine.dashboard()
+
+    console.rule("[bold magenta]🎭 RooFlow Multi-Agent Dashboard[/]")
+    for agent, info in data["agents"].items():
+        mode_icon = {"architect": "🏗️", "code": "💻", "debug": "🐛", "ask": "❓", "orchestrate": "🎭"}.get(info["mode"], "❓")
+        console.print(f"\n[bold]{agent}[/]  {mode_icon} {info['mode']}")
+        if info["task"]:
+            console.print(f"   [dim]Завдання:[/] {info['task']}")
+        console.print(f"   [dim]Перемикань режимів:[/] {info['history_count']}")
+        console.print(f"   [dim]Оновлено:[/] {info['last_updated'][:19]}")
+
+    if data["shared_files"]:
+        console.print("\n[bold]Shared Memory Bank:[/]")
+        for fname, fsize in data["shared_files"].items():
+            console.print(f"   • {fname} ({fsize} bytes)")
+
+
+@rooflow.command("mode")
+def rooflow_mode(
+    agent: str = typer.Argument(..., help="english_bot | crypto_monitor | polymarket_analyzer"),
+    mode: str = typer.Argument(..., help="architect | code | debug | ask | orchestrate"),
+    reason: str = typer.Option("", help="Причина перемикання"),
+) -> None:
+    """🔄 Перемкнути RooFlow режим для агента."""
+    if agent not in ("english_bot", "crypto_monitor", "polymarket_analyzer"):
+        raise typer.BadParameter(f"Unknown agent: {agent}")
+    if mode not in ("architect", "code", "debug", "ask", "orchestrate"):
+        raise typer.BadParameter(f"Unknown mode: {mode}")
+
+    engine = RooFlowEngine()
+    result = engine.switch_mode(agent, mode, reason)
+    icon = {"architect": "🏗️", "code": "💻", "debug": "🐛", "ask": "❓", "orchestrate": "🎭"}.get(mode, "❓")
+    console.print(f"[bold green]{icon} {agent}[/] → {mode}")
+    if reason:
+        console.print(f"[dim]Причина: {reason}[/]")
+    console.print(f"[dim]Попередній: {result['previous']}[/]")
+
+
+@rooflow.command("memory")
+def rooflow_memory(
+    agent: str = typer.Argument(..., help="english_bot | crypto_monitor | polymarket_analyzer | shared"),
+    file: str = typer.Argument(..., help="Файл Memory Bank (напр. activeContext.md)"),
+) -> None:
+    """📝 Прочитати Memory Bank файл."""
+    engine = RooFlowEngine()
+    if agent == "shared":
+        content = engine.read_shared(file)
+    else:
+        content = engine.read_memory_bank(agent, file)
+    console.rule(f"[bold cyan]{agent}/{file}[/]")
+    console.print(Markdown(content))
+
+
+@rooflow.command("handoff")
+def rooflow_handoff(
+    from_agent: str = typer.Argument(..., help="Відправник"),
+    to_agent: str = typer.Argument(..., help="Отримувач"),
+    task: str = typer.Argument(..., help="Опис завдання"),
+    deliverables: str = typer.Option("", help="Результати через кому"),
+) -> None:
+    """📤 Створити handoff між агентами."""
+    if from_agent not in ("english_bot", "crypto_monitor", "polymarket_analyzer"):
+        raise typer.BadParameter(f"Unknown from_agent: {from_agent}")
+    if to_agent not in ("english_bot", "crypto_monitor", "polymarket_analyzer"):
+        raise typer.BadParameter(f"Unknown to_agent: {to_agent}")
+
+    engine = RooFlowEngine()
+    dels = [d.strip() for d in deliverables.split(",") if d.strip()]
+    hid = engine.create_handoff(from_agent, to_agent, task, dels)
+    console.print(f"[bold green]📤 Handoff створено:[/] {hid}")
+    console.print(f"   [dim]{from_agent} → {to_agent}[/]")
+    console.print(f"   [dim]Завдання: {task}[/]")
+
+
+@rooflow.command("complete")
+def rooflow_complete(
+    handoff_id: str = typer.Argument(..., help="ID handoff (напр. HO-20260521-123456)"),
+    result: str = typer.Argument(..., help="Результат виконання"),
+) -> None:
+    """✅ Позначити handoff як виконаний."""
+    engine = RooFlowEngine()
+    engine.complete_handoff(handoff_id, result)
+    console.print(f"[bold green]✅ Handoff {handoff_id} виконано[/]")
+    console.print(f"   [dim]Результат: {result}[/]")
+
+
+@rooflow.command("agents")
+def rooflow_agents() -> None:
+    """📋 Перелік агентів та їх RooFlow режими."""
+    console.rule("[bold]🎭 RooFlow Agents[/]")
+    for mode, desc in MODE_DESCRIPTIONS.items():
+        console.print(f"\n{desc}")
+    console.print("\n[dim]Агенти: english_bot, crypto_monitor, polymarket_analyzer[/]")
 
 
 # =========================================================================== #
