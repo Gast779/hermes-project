@@ -6,11 +6,23 @@ Hermes — головна CLI-точка входу.
     python main.py polymarket monitor "trump"            # моніторинг ринків за темою
     python main.py polymarket realtime --tokens 0x... 0x...
     python main.py polymarket cross                      # крос-маркет з Kalshi
+    python main.py polymarket depth-scan                 # глибокий арбітраж
+    python main.py polymarket news                       # новини + ринки
     python main.py crypto report                         # одноразовий звіт
     python main.py crypto watch                          # daemon: fast movers
     python main.py english lesson [grammar|vocab|speak]  # генерація уроку
     python main.py english chat                          # інтерактивний REPL
-    python main.py scheduler                             # повний розклад
+    python main.py scheduler                             # повний розклад (7 skills)
+    
+RooFlow:
+    python main.py rooflow status                        # dashboard всіх агентів
+    python main.py rooflow mode <agent> <mode>           # перемикання режиму
+    python main.py rooflow memory <agent> <file>         # читання Memory Bank
+    python main.py rooflow handoff <from> <to> <task>    # створення handoff
+    python main.py rooflow predict <market> <prob>      # новий прогноз
+    python main.py rooflow resolve <PR-id> <true/false>  # закрити прогноз
+    python main.py rooflow predictions [--status active]   # реєстр прогнозів
+    python main.py rooflow prediction-stats               # статистика Brier
 """
 from __future__ import annotations
 
@@ -866,6 +878,100 @@ def rooflow_jobs() -> None:
         console.print(table)
     except Exception as e:
         console.print(f"[yellow]Помилка завантаження jobs: {e}[/]")
+
+
+@rooflow.command("predictions")
+def rooflow_predictions(
+    status: str = typer.Option("", help="Фільтр: active | resolved | all"),
+) -> None:
+    """📊 Переглянути реєстр прогнозів."""
+    engine = RooFlowEngine()
+    content = engine.read_shared("predictionRegistry.md")
+    
+    if not content or "## Активні Прогнози" not in content:
+        console.print("[yellow]Prediction Registry порожній.[/]")
+        return
+    
+    stats = engine.get_prediction_stats()
+    console.rule(f"[bold cyan]📊 Prediction Registry[/]")
+    console.print(f"Всього: {stats['total']} | Активні: {stats['active']} | Вирішені: {stats['resolved']}")
+    if stats['avg_brier'] is not None:
+        console.print(f"Середній Brier: {stats['avg_brier']:.4f}")
+    
+    # Показати записи
+    lines = content.split("\n")
+    in_entries = False
+    for line in lines:
+        if line.startswith("### PR-"):
+            in_entries = True
+        if in_entries:
+            if status == "active" and "🟢 active" not in line and not line.startswith("###"):
+                continue
+            if status == "resolved" and "⚫ resolved" not in line and not line.startswith("###"):
+                continue
+            console.print(line)
+
+
+@rooflow.command("predict")
+def rooflow_predict(
+    market: str = typer.Argument(..., help="Назва ринку/події"),
+    probability: float = typer.Argument(..., help="Ймовірність (0.0-1.0)"),
+    bull: float = typer.Option(0.0, help="Bull сценарій"),
+    bear: float = typer.Option(0.0, help="Bear сценарій"),
+    catalysts: str = typer.Option("", help="Каталізатори через кому"),
+) -> None:
+    """🎯 Зареєструвати новий прогноз."""
+    engine = RooFlowEngine()
+    cats = [c.strip() for c in catalysts.split(",") if c.strip()]
+    pred_id = engine.register_prediction(
+        agent="mirofish",
+        market=market,
+        probability=probability,
+        scenarios={"baseline": probability, "bull": bull, "bear": bear},
+        catalysts=cats,
+    )
+    console.print(f"[bold green]🎯 Прогноз зареєстровано:[/] {pred_id}")
+    console.print(f"   Ринок: {market}")
+    console.print(f"   Ймовірність: {probability:.1%}")
+
+
+@rooflow.command("resolve")
+def rooflow_resolve(
+    prediction_id: str = typer.Argument(..., help="ID прогнозу (PR-YYYYMMDD-HHMMSS)"),
+    occurred: bool = typer.Argument(..., help="Чи відбулась подія (true/false)"),
+) -> None:
+    """✅ Закрити прогноз та обчислити Brier score."""
+    engine = RooFlowEngine()
+    result = engine.resolve_prediction(prediction_id, occurred)
+    
+    if "error" in result:
+        console.print(f"[bold red]❌ {result['error']}[/]")
+        return
+    
+    console.print(f"[bold green]✅ Прогноз закрито:[/] {prediction_id}")
+    console.print(f"   Forecast: {result['forecast']:.1%}")
+    console.print(f"   Actual: {result['actual']:.1%}")
+    console.print(f"   Brier Score: {result['brier']:.4f} {result['grade']}")
+
+
+@rooflow.command("prediction-stats")
+def rooflow_prediction_stats() -> None:
+    """📈 Статистика прогнозів (Brier scores)."""
+    engine = RooFlowEngine()
+    stats = engine.get_prediction_stats()
+    
+    console.rule("[bold cyan]📈 Prediction Statistics[/]")
+    table = Table()
+    table.add_column("Metric")
+    table.add_column("Value")
+    table.add_row("Всього прогнозів", str(stats["total"]))
+    table.add_row("Активні", str(stats["active"]))
+    table.add_row("Вирішені", str(stats["resolved"]))
+    if stats["avg_brier"] is not None:
+        table.add_row("Середній Brier", f"{stats['avg_brier']:.4f}")
+        table.add_row("Найкращий Brier", f"{stats['best_brier']:.4f}")
+        table.add_row("Найгірший Brier", f"{stats['worst_brier']:.4f}")
+    console.print(table)
 
 
 # =========================================================================== #

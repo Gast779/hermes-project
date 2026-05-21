@@ -257,3 +257,143 @@ class RooFlowEngine:
     def clear_task(self, agent: str) -> None:
         self.states[agent].active_task = None
         self._save_state(agent)
+
+    # =========================================================================
+    # PREDICTION REGISTRY — для MiroFish
+    # =========================================================================
+    def register_prediction(
+        self,
+        agent: str,
+        market: str,
+        probability: float,
+        scenarios: dict[str, float],
+        catalysts: list[str],
+        ttl_hours: int = 168,
+    ) -> str:
+        """
+        Зареєструвати новий прогноз в predictionRegistry.
+        
+        Returns:
+            prediction_id: PR-YYYYMMDD-HHMMSS
+        """
+        pred_id = f"PR-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}"
+        entry = (
+            f"\n### {pred_id}\n"
+            f"- **Agent:** {agent}\n"
+            f"- **Market:** {market}\n"
+            f"- **Probability:** {probability:.2%}\n"
+            f"- **Scenarios:**\n"
+            f"  - Baseline: {scenarios.get('baseline', 0):.2%}\n"
+            f"  - Bull: {scenarios.get('bull', 0):.2%}\n"
+            f"  - Bear: {scenarios.get('bear', 0):.2%}\n"
+            f"- **Catalysts:** {', '.join(catalysts)}\n"
+            f"- **Created:** {datetime.utcnow().isoformat()}\n"
+            f"- **Expires:** {(datetime.utcnow() + __import__('datetime').timedelta(hours=ttl_hours)).isoformat()}\n"
+            f"- **Brier Score:** 🔴 pending\n"
+            f"- **Status:** 🟢 active\n"
+        )
+        self.append_shared("predictionRegistry.md", entry)
+        self._log_execution(agent, "code", f"Registered prediction {pred_id} for {market}: {probability:.1%}")
+        return pred_id
+
+    def resolve_prediction(
+        self,
+        prediction_id: str,
+        outcome_occurred: bool,
+        actual_probability: float | None = None,
+    ) -> dict:
+        """
+        Закрити прогноз та обчислити Brier score.
+        
+        Brier = (forecast - actual)^2
+        - Для бінарних: actual = 1 (так) або 0 (ні)
+        - Чим менше — тим краще (0 = ідеал, 1 = гірший)
+        """
+        content = self.read_shared("predictionRegistry.md")
+        header = f"### {prediction_id}"
+        idx = content.find(header)
+        if idx == -1:
+            log.warning("Prediction %s not found", prediction_id)
+            return {"error": "Prediction not found"}
+        
+        # Знайти блок
+        end_idx = content.find("\n### PR-", idx + len(header))
+        if end_idx == -1:
+            block = content[idx:]
+        else:
+            block = content[idx:end_idx]
+        
+        # Обчислити Brier score
+        if actual_probability is None:
+            actual = 1.0 if outcome_occurred else 0.0
+        else:
+            actual = actual_probability
+        
+        # Витягнути ймовірність з блоку
+        import re as _re
+        prob_match = _re.search(r'\*\*Probability:\*\* ([\d.]+)%', block)
+        if prob_match:
+            forecast = float(prob_match.group(1)) / 100.0
+        else:
+            forecast = 0.5  # default
+        
+        brier = (forecast - actual) ** 2
+        
+        # Оновити блок
+        new_block = block.replace("🔴 pending", f"{brier:.4f}")
+        new_block = new_block.replace("🟢 active", "⚫ resolved")
+        new_block += f"\n- **Resolved:** {datetime.utcnow().isoformat()}\n"
+        new_block += f"- **Outcome:** {'✅ occurred' if outcome_occurred else '❌ did not occur'}\n"
+        new_block += f"- **Brier Score:** {brier:.4f} ({self._brier_grade(brier)})\n"
+        
+        if end_idx == -1:
+            new_content = content[:idx] + new_block
+        else:
+            new_content = content[:idx] + new_block + content[end_idx:]
+        
+        self.write_shared("predictionRegistry.md", new_content)
+        self._log_execution("mirofish", "code", f"Resolved prediction {prediction_id}: Brier={brier:.4f}")
+        
+        return {
+            "prediction_id": prediction_id,
+            "forecast": forecast,
+            "actual": actual,
+            "brier": brier,
+            "grade": self._brier_grade(brier),
+        }
+
+    @staticmethod
+    def _brier_grade(brier: float) -> str:
+        if brier <= 0.05:
+            return "🥇 Excellent"
+        elif brier <= 0.15:
+            return "🥈 Good"
+        elif brier <= 0.25:
+            return "🥉 Fair"
+        else:
+            return "⚠️ Poor"
+
+    def get_prediction_stats(self) -> dict:
+        """Статистика по всіх прогнозах."""
+        content = self.read_shared("predictionRegistry.md")
+        import re as _re
+        
+        active = content.count("🟢 active")
+        resolved = content.count("⚫ resolved")
+        
+        # Витягнути всі Brier scores
+        brier_scores = []
+        for match in _re.finditer(r'Brier Score:\*\* ([\d.]+)', content):
+            try:
+                brier_scores.append(float(match.group(1)))
+            except ValueError:
+                pass
+        
+        return {
+            "active": active,
+            "resolved": resolved,
+            "total": active + resolved,
+            "avg_brier": sum(brier_scores) / len(brier_scores) if brier_scores else None,
+            "best_brier": min(brier_scores) if brier_scores else None,
+            "worst_brier": max(brier_scores) if brier_scores else None,
+        }
