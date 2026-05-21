@@ -16,8 +16,18 @@ English Learning Bot
     - Кожен урок ≤ 10 хв.  Прогрес зберігається у JSON.
 """
 
+from .flashcards import Flashcard, FlashcardDeck, RATING_LABELS
 from .grok_client import GrokClient
 from .lesson_planner import LessonPlanner, Lesson, LessonType
 from .handlers import EnglishBot
+from .progress import ProgressDashboard
+from .daily import DailyChallenge, DailyEngine
+from .podcast import PodcastEngine, PodcastScript, PodcastLevel
+from .quizzes import QuizEngine, QuizKind, QuizSession
 
-__all__ = ["GrokClient", "LessonPlanner", "Lesson", "LessonType", "EnglishBot"]
+__all__ = ["GrokClient", "LessonPlanner", "Lesson", "LessonType", "EnglishBot", 
+           "FlashcardDeck", "Flashcard", "RATING_LABELS",
+           "QuizEngine", "QuizKind", "QuizSession",
+           "PodcastEngine", "PodcastScript", "PodcastLevel",
+           "DailyEngine", "DailyChallenge",
+           "ProgressDashboard"]

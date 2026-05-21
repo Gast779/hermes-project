@@ -33,7 +33,18 @@ from crypto_monitor import (
     generate_daily_report,
 )
 from crypto_monitor.scheduler import add_cron_job
-from english_bot import EnglishBot, GrokClient, LessonPlanner, LessonType
+from english_bot import (
+    DailyEngine,
+    EnglishBot,
+    FlashcardDeck,
+    GrokClient,
+    LessonPlanner,
+    LessonType,
+    PodcastEngine,
+    ProgressDashboard,
+    QuizEngine,
+    RATING_LABELS,
+)
 from polymarket_analyzer import (
     InternalArbitrageFinder,
     PolymarketClient,
@@ -358,6 +369,265 @@ def english_voice(
     console.print(result["transcript"])
     console.rule("[green]Feedback")
     console.print(Markdown(result["feedback"]))
+
+
+@english.command("word")
+def english_word(
+    word: str = typer.Argument(..., help="Українське або англійське слово/фраза"),
+    level: str = typer.Option("B1", help="CEFR рівень (A1..C1)"),
+    tag: str = typer.Option("", help="Тег через кому, напр. 'work,crypto'"),
+) -> None:
+    """Додати слово в колоду (Grok заповнить переклад, IPA, приклад)."""
+    from english_bot.prompts import SYSTEM_TUTOR
+    grok = GrokClient()
+    prompt = (
+        f"Add flashcard for: \"{word}\". Level: {level}.\n\n"
+        "Return ONLY valid JSON with these fields:\n"
+        "  front (string) — українське слово/фраза\n"
+        "  back (string) — англійське слово/фраза\n"
+        "  ipa (string) — IPA транскрипція\n"
+        "  example (string) — приклад речення англійською (≤ 12 слів)\n"
+        "  example_uk (string) — переклад речення українською\n"
+        "No markdown, no comments."
+    )
+    system = SYSTEM_TUTOR.format(level=level)
+    raw = grok.chat_simple(system, prompt)
+    # Парсинг JSON з відповіді (Grok може обгорнути у markdown)
+    import re
+    import json as _json
+    m = re.search(r"\{.*\}", raw, re.DOTALL)
+    if not m:
+        console.print(f"[red]Grok не повернув JSON:\n{raw}[/]")
+        raise typer.Exit(1)
+    try:
+        data = _json.loads(m.group())
+    except _json.JSONDecodeError as e:
+        console.print(f"[red]Помилка парсингу JSON: {e}\n{raw}[/]")
+        raise typer.Exit(1)
+
+    deck = FlashcardDeck()
+    card = deck.add(
+        front=data.get("front", word),
+        back=data.get("back", ""),
+        ipa=data.get("ipa", ""),
+        example=data.get("example", ""),
+        example_uk=data.get("example_uk", ""),
+        level=level,
+        tags=[t.strip() for t in tag.split(",") if t.strip()],
+    )
+    console.print(f"[green]✅ Додано картку[/] [bold]{card.front}[/] → {card.back} {card.ipa}")
+    console.print(f"   Приклад: {card.example}")
+
+
+@english.command("flashcard")
+def english_flashcard(
+    count: int = typer.Option(10, help="Скільки карток повторити"),
+) -> None:
+    """SRS-повторення флеш-карток."""
+    deck = FlashcardDeck()
+    due = deck.due_cards()
+    if not due:
+        console.print("[yellow]На сьогодні немає карток для повторення.[/]")
+        console.print(f"[dim]Всього в колоді: {deck.stats()['total']}[/]")
+        return
+
+    console.print(f"[bold green]📚 Карток на сьогодні: {len(due)}[/] (показую max {count})")
+    for card in due[:count]:
+        console.rule(f"[bold]{card.front}[/]  [dim]({card.ipa})[/]")
+        _ = console.input("[dim]Натисни Enter для відповіді...[/]")
+        console.print(f"[bold green]{card.back}[/]")
+        if card.example:
+            console.print(f"[dim]Приклад:[/] {card.example}")
+        console.print()
+        # Вибір рейтингу
+        for k, v in RATING_LABELS.items():
+            console.print(f"  [{k}] {v}")
+        choice = console.input("[bold]Оцінка (0-3):[/] ").strip()
+        try:
+            rating = int(choice)
+            if rating not in (0, 1, 2, 3):
+                raise ValueError
+        except ValueError:
+            console.print("[yellow]Некоректний ввід — встановлено 'hard' (1).[/]")
+            rating = 1
+        deck.review(card.id, rating)
+        console.print(f"   [dim]Наступне повторення: {card.due_date}[/]\n")
+
+    console.print("[green]Готово! Картки оновлено.[/]")
+
+
+@english.command("deck")
+def english_deck() -> None:
+    """Переглянути статистику колоди."""
+    deck = FlashcardDeck()
+    st = deck.stats()
+    table = Table(title="📚 Flashcard Deck")
+    table.add_column("Metric")
+    table.add_column("Value")
+    table.add_row("Всього карток", str(st["total"]))
+    table.add_row("На сьогодні", str(st["due_today"]))
+    table.add_row("  └ Нові", str(st["new"]))
+    table.add_row("  └ Повторення", str(st["review"]))
+    table.add_row("Вивчено (≥3 reps)", str(st["mature"]))
+    console.print(table)
+
+    # Міні-таблиця карток на сьогодні
+    due = deck.due_cards()[:20]
+    if due:
+        console.print("\n[bold]Сьогоднішні картки:[/]")
+        t2 = Table()
+        t2.add_column("🇺🇦")
+        t2.add_column("🇬🇧")
+        t2.add_column("Interval")
+        t2.add_column("Reps")
+        for c in due:
+            t2.add_row(c.front, c.back, f"{c.interval}d", str(c.repetitions))
+        console.print(t2)
+
+
+@english.command("podcast")
+def english_podcast(
+    topic: str = typer.Option("", help="Тема діалогу (порожньо = випадкова)"),
+    level: str = typer.Option("B1", help="CEFR рівень"),
+) -> None:
+    """🎧 Listening practice — діалог + comprehension questions."""
+    grok = GrokClient()
+    engine = PodcastEngine(grok, level=level)
+    script = engine.generate(topic=topic or None)
+    engine.save_to_history(script)
+
+    console.rule(f"[bold magenta]🎧 {script.title}[/]  [dim]({script.level})[/]")
+    console.print(f"[dim]Topic:[/] {script.topic}\n")
+
+    # Діалог
+    for turn in script.dialog:
+        speaker_color = "cyan" if turn["speaker"] == "Alex" else "green"
+        console.print(f"[{speaker_color}]{turn['speaker']}:[/] {turn['text']}")
+    console.print()
+
+    # Словник
+    if script.vocabulary:
+        console.rule("[bold]📖 Key Vocabulary[/]")
+        for item in script.vocabulary:
+            console.print(f"  • [bold]{item['word']}[/] {item.get('ipa', '')} — {item['uk']}")
+        console.print()
+
+    # Comprehension questions
+    if script.questions:
+        correct_count = 0
+        for i, q in enumerate(script.questions, 1):
+            console.print(f"[bold]{i}. {q['question']}[/]")
+            for j, opt in enumerate(q["options"], start=1):
+                console.print(f"   {j}. {opt}")
+            choice = console.input("Відповідь (1-4): ").strip()
+            try:
+                idx = int(choice) - 1
+                if idx == q["correct"]:
+                    console.print("[green]✅ Правильно![/]\n")
+                    correct_count += 1
+                else:
+                    console.print(f"[red]❌ Ні. Правильна: {q['correct'] + 1}. {q['options'][q['correct']]}[/]\n")
+            except (ValueError, IndexError):
+                console.print(f"[yellow]⚠ Некоректно. Правильна: {q['correct'] + 1}.[/]\n")
+
+        pct = round(100 * correct_count / len(script.questions), 1)
+        console.rule(f"[bold]Результат: {correct_count}/{len(script.questions)} ({pct}%)[/]")
+
+
+@english.command("daily")
+def english_daily(
+    level: str = typer.Option("B1", help="CEFR рівень"),
+) -> None:
+    """📅 Щоденний челлендж: переклад, граматика, rephrase або fill-in-gap."""
+    grok = GrokClient()
+    engine = DailyEngine(grok, level=level)
+
+    # Показати streak
+    streak_info = engine.streak()
+    if streak_info["status"] == "done":
+        console.print(f"[green]✅ Сьогоднішній челлендж вже виконано! Streak: {streak_info['streak']} 🔥[/]")
+        return
+    elif streak_info["status"] == "broken":
+        console.print(f"[yellow]⚠ Streak зірвано. Починаємо заново![/]")
+    else:
+        console.print(f"[dim]🔥 Поточний streak: {streak_info['streak']}[/]")
+
+    challenge = engine.generate()
+    console.rule(f"[bold cyan]📅 Daily Challenge — {challenge.date}[/]  [dim]({challenge.kind})[/]")
+    console.print(f"\n[bold]{challenge.task}[/]\n")
+    if challenge.hint:
+        console.print(f"[dim]💡 Підказка: {challenge.hint}[/]\n")
+
+    answer = console.input("[bold]Твоя відповідь:[/] ").strip()
+    is_correct, explanation = engine.check(challenge, answer)
+
+    if is_correct:
+        console.print(f"\n[green]✅ Правильно![/]")
+        console.print(f"[green]🔥 Streak: {engine.streak()['streak']} днів[/]")
+    else:
+        console.print(f"\n[red]❌ Ні. Правильна відповідь:[/] {challenge.answer}")
+    console.print(f"[dim]Пояснення: {explanation}[/]")
+
+
+@english.command("stats")
+def english_stats() -> None:
+    """📊 Прогрес-дашборд: уроки, картки, квізи, streak, слабкі місця."""
+    dash = ProgressDashboard()
+    data = dash.build()
+
+    console.rule(f"[bold green]📊 English Progress — Level {data['level']}[/]")
+
+    # Уроки
+    t1 = Table(title="Lessons")
+    t1.add_column("Metric")
+    t1.add_column("Value")
+    t1.add_row("Пройдено тем", str(data["lessons"]["completed"]))
+    t1.add_row("Streak (уроки)", f"{data['lessons']['streak']} 🔥")
+    console.print(t1)
+
+    # Флеш-карти
+    t2 = Table(title="Flashcards")
+    t2.add_column("Metric")
+    t2.add_column("Value")
+    t2.add_row("Всього карток", str(data["flashcards"]["total"]))
+    t2.add_row("Вивчено (≥3 reps)", str(data["flashcards"]["mature"]))
+    t2.add_row("На сьогодні", str(data["flashcards"]["due_today"]))
+    console.print(t2)
+
+    # Квізи
+    t3 = Table(title="Quizzes")
+    t3.add_column("Metric")
+    t3.add_column("Value")
+    t3.add_row("Сесій", str(data["quizzes"]["total_sessions"]))
+    t3.add_row("Середній бал", f"{data['quizzes']['avg_score']}%")
+    if data["quizzes"]["grammar_accuracy"] is not None:
+        t3.add_row("Grammar accuracy", f"{data['quizzes']['grammar_accuracy']}%")
+    if data["quizzes"]["vocab_accuracy"] is not None:
+        t3.add_row("Vocab accuracy", f"{data['quizzes']['vocab_accuracy']}%")
+    console.print(t3)
+
+    # Daily
+    t4 = Table(title="Daily Challenges")
+    t4.add_column("Metric")
+    t4.add_column("Value")
+    t4.add_row("Всього", str(data["daily"]["total"]))
+    t4.add_row("Виконано", str(data["daily"]["completed"]))
+    t4.add_row("Відсоток", f"{data['daily']['completion_rate']}%")
+    t4.add_row("Streak", f"{data['daily']['streak']} 🔥")
+    console.print(t4)
+
+    # Podcasts
+    t5 = Table(title="Podcasts")
+    t5.add_column("Metric")
+    t5.add_column("Value")
+    t5.add_row("Прослухано", str(data["podcasts"]["total"]))
+    console.print(t5)
+
+    # Слабкі місця
+    if data["weak_spots"]:
+        console.print("\n[bold red]⚠ Слабкі місця:[/]")
+        for spot in data["weak_spots"]:
+            console.print(f"  • {spot}")
 
 
 # =========================================================================== #
