@@ -28,6 +28,9 @@ def send_telegram(
     if not token or not chat_id:
         log.warning("Telegram credentials missing; skipping notification.")
         return False
+    if not text or not text.strip():
+        log.debug("Empty message — skipping send_telegram.")
+        return False
     # Telegram має ліміт 4096 символів на повідомлення
     if len(text) > 4000:
         text = text[:3990] + "\n…(truncated)"

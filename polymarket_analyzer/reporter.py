@@ -21,7 +21,7 @@ def _slug_url(slug: str) -> str:
 def format_arbitrage_report(opps: Iterable[ArbitrageOpportunity]) -> str:
     opps = list(opps)
     if not opps:
-        return "_Арбітражних можливостей не знайдено._"
+        return ""  # No data — silent
     lines = [
         "## 🟢 Polymarket: внутрішній арбітраж",
         "",
@@ -86,7 +86,7 @@ def format_topic_report(report: TopicReport) -> str:
     if report.arbitrage:
         lines.append(format_arbitrage_report(report.arbitrage))
     else:
-        lines.append("_Арбітражу всередині цих ринків зараз немає._")
+        pass  # No arbitrage — silent
 
     return "\n".join(lines)
 
@@ -95,7 +95,7 @@ def format_topic_report(report: TopicReport) -> str:
 def format_cross_market_report(discrepancies: Iterable[Discrepancy]) -> str:
     items = list(discrepancies)
     if not items:
-        return "_Між Polymarket і зовнішніми ринками значущих розбіжностей не знайдено._"
+        return ""  # No data — silent
     lines = [
         "## 🔀 Crossmarket: Polymarket vs зовнішні",
         "",

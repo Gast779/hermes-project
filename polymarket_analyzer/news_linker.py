@@ -279,7 +279,7 @@ class NewsLinker:
 def format_news_links(matches: Iterable[NewsMatch]) -> str:
     matches = list(matches)
     if not matches:
-        return "_Жодних звʼязків новина↔ринок зараз немає._"
+        return ""  # No matches — silent
     lines = [
         "## 📰 News → Polymarket",
         "",
