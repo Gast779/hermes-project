@@ -20,14 +20,17 @@ log = logging.getLogger(__name__)
 class GrokClient:
     def __init__(
         self,
-        api_key: str,
+        api_key: str | None = None,
         *,
         model: str = "grok-4-0709",
         base_url: str = "https://api.x.ai/v1",
         timeout: float = 60.0,
     ):
+        import os
+        if api_key is None:
+            api_key = os.getenv("XAI_API_KEY", "")
         if not api_key:
-            raise ValueError("XAI_API_KEY is required for GrokClient")
+            raise ValueError("XAI_API_KEY is required for GrokClient. Set it in .env or pass to constructor.")
         self.model = model
         self._client = OpenAI(api_key=api_key, base_url=base_url, timeout=timeout)
 

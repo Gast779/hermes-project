@@ -247,24 +247,31 @@ def _alert_callback(alert) -> None:
         url=alert.chart_url,
     )
     console.print(f"[bold red]ALERT[/] {text}")
-    send_telegram(text)
+    send_telegram(
+        text,
+        chat_id="-1003792129186",
+        message_thread_id=26,
+    )
 
 
 @crypto.command("watch")
-def crypto_watch() -> None:
+def crypto_watch(
+    interval: int = typer.Option(60, "--interval", "-i", help="Poll interval in seconds"),
+    threshold_5m: float = typer.Option(5.0, "--threshold", "-t", help="Alert threshold % for 5m window"),
+) -> None:
     """Daemon: моніторинг fast-movers (Ctrl-C — стоп)."""
-    crypto_watch_loop()
+    crypto_watch_loop(interval=interval, threshold_5m=threshold_5m)
 
 
-def crypto_watch_loop() -> None:
+def crypto_watch_loop(interval: int | None = None, threshold_5m: float | None = None) -> None:
     cfg = settings()["crypto_monitor"]["alerts"]
     cg = _make_cg()
     watcher = FastMoversWatcher(
         cg,
         callback=_alert_callback,
-        pct_5m=cfg["thresholds"]["pct_5m"],
+        pct_5m=threshold_5m if threshold_5m is not None else cfg["thresholds"]["pct_5m"],
         pct_1h=cfg["thresholds"]["pct_1h"],
-        poll_interval_seconds=cfg["poll_interval_seconds"],
+        poll_interval_seconds=interval if interval is not None else cfg["poll_interval_seconds"],
         min_volume_24h=cfg["min_volume_usd_24h"],
         min_market_cap=cfg["min_market_cap_usd"],
         cooldown_minutes=cfg["cooldown_minutes"],
@@ -279,9 +286,8 @@ def crypto_watch_loop() -> None:
 # ENGLISH
 # =========================================================================== #
 def _make_bot() -> EnglishBot:
-    api_key = env("XAI_API_KEY", required=True)
     model = settings()["english_bot"]["grok_model"]
-    grok = GrokClient(api_key=api_key, model=model)
+    grok = GrokClient(model=model)  # api_key береться з .env автоматично
     return EnglishBot(grok, LessonPlanner())
 
 

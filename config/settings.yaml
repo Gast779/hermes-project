@@ -52,5 +52,5 @@ notifications:
   channels:
     - telegram
   formats:
-    crypto_alert: "*{symbol}* `+{pct:.1f}%` за {window} | ${price:.4f} | [chart]({url})"
+    crypto_alert: "🚀 ALERT: {symbol} +{pct:.1f}% in {window} | ${price:.4f} | [chart]({url})"
     polymarket_arb: "💰 Arb {kind}: *{question}* | edge `{edge:.2%}` | sum={sum_:.4f}"
