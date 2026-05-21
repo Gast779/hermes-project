@@ -974,6 +974,65 @@ def rooflow_prediction_stats() -> None:
     console.print(table)
 
 
+@rooflow.command("run-workflow")
+def rooflow_run_workflow(
+    workflow: str = typer.Argument(..., help="sentiment | prediction | stress-test"),
+    arg: str = typer.Option("", help="Аргумент для workflow (напр. market question)"),
+) -> None:
+    """🔄 Запустити між-агентний workflow."""
+    from rooflow.workflows import WorkflowRunner
+    
+    runner = WorkflowRunner()
+    
+    if workflow not in runner.workflows:
+        console.print(f"[bold red]❌ Невідомий workflow: {workflow}[/]")
+        console.print(f"[dim]Доступні: {', '.join(runner.workflows.keys())}[/]")
+        raise typer.Exit(1)
+    
+    console.print(f"[bold green]🚀 Запуск workflow: {workflow}[/]")
+    
+    if workflow == "sentiment":
+        result = runner.run_sentiment_scan(keyword=arg or "bitcoin")
+    elif workflow == "prediction":
+        if not arg:
+            console.print("[yellow]⚠️ Вкажіть market question: --arg \"Will BTC hit 70k?\"[/]")
+            raise typer.Exit(1)
+        result = runner.run_prediction_packet(market_question=arg)
+    elif workflow == "stress-test":
+        result = runner.run_stress_test(market=arg or "BTC")
+    else:
+        result = runner.workflows[workflow]()
+    
+    console.print(f"[bold green]✅ Workflow завершено:[/] {result['status']}")
+    console.print(f"[dim]Handoff: {result.get('handoff_id', 'N/A')}[/]")
+    if 'prediction_id' in result:
+        console.print(f"[dim]Prediction: {result['prediction_id']}[/]")
+
+
+@rooflow.command("workflows")
+def rooflow_workflows() -> None:
+    """📋 Перелік доступних workflow."""
+    from rooflow.workflows import WorkflowRunner
+    
+    runner = WorkflowRunner()
+    console.rule("[bold cyan]🔄 Available Workflows[/]")
+    
+    table = Table()
+    table.add_column("ID")
+    table.add_column("Name")
+    table.add_column("Agents")
+    table.add_column("Telegram Thread")
+    
+    for wf in runner.list_workflows():
+        table.add_row(
+            wf["id"],
+            wf["name"],
+            " → ".join(wf["agents"]),
+            str(wf["telegram"]),
+        )
+    console.print(table)
+
+
 # =========================================================================== #
 # DB / HISTORY
 # =========================================================================== #
