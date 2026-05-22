@@ -20,17 +20,32 @@
       ⩽-залежність ∑ probability = 1 між взаємовиключними outcomes.
 
 Цей модуль не торгує — лише знаходить потенційні нерівноваги.
+
+Safety-інтеграція (Фаза 1):
+    - Перед публікацією сигналу → перевірка circuit breakers
+    - Оцінка resolution risk → скипаємо небезпечні ринки
+    - Fee-aware edge (з урахуванням fee_per_side)
+    - Kelly sizing → recommend_usd для звіту
 """
 
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, asdict
-from typing import Iterable
+from dataclasses import dataclass, asdict, field
+from typing import Iterable, Any
 
 from .client import Market, Outcome, PolymarketClient
 
 log = logging.getLogger(__name__)
+
+
+# --- lazy imports safety modules (циркулярні) ---
+def _import_safety():
+    """Lazy import — уникає циркулярних залежностей на старті."""
+    from risk.position_sizing import recommend_size, SizingParams, StrategyType
+    from risk.circuit_breakers import trading_allowed
+    from polymarket_analyzer.resolution_risk import score_resolution_risk
+    return recommend_size, SizingParams, StrategyType, trading_allowed, score_resolution_risk
 
 
 # --------------------------------------------------------------------------- #
@@ -48,6 +63,11 @@ class ArbitrageOpportunity:
     outcomes: list[dict]       # для відображення
     volume_usd: float
     end_date_iso: str | None
+
+    safe_to_trade: bool = True
+    resolution_risk: float = 0.0
+    recommended_usd: float | None = None
+    sizing_reasoning: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -158,5 +178,95 @@ class InternalArbitrageFinder:
             except Exception as e:        # noqa: BLE001
                 log.warning("analyze_market failed for %s: %s", m.id, e)
         # сортуємо за edge: найжирніший зверху
+        opps.sort(key=lambda o: o.edge, reverse=True)
+        return opps
+
+    # ---- safety wrapper (Фаза 1) ------------------------------------- #
+    def analyze_market_safely(
+        self,
+        market: Market,
+        *,
+        bankroll_usd: float = 10_000,  # для Kelly sizing
+        correlated_exposure_usd: float = 0,
+    ) -> ArbitrageOpportunity | None:
+        """
+        analyze_market з усіма safety checks:
+        1. Circuit breaker (трейдинг дозволено?)
+        2. Resolution risk (ринок не ambiguous?)
+        3. Kelly sizing (рекомендований розмір)
+        """
+        recommend_size, SizingParams, StrategyType, trading_allowed, score_resolution_risk = (
+            _import_safety()
+        )
+
+        # --- 1. Circuit breaker ---
+        allowed, tripped = trading_allowed()
+        if not allowed:
+            log.warning("Trade blocked: breakers tripped: %s", tripped)
+            return None
+
+        # --- 2. Resolution risk ---
+        market_dict = {
+            "question": market.question,
+            "description": "",  # client не містить description
+            "resolution_source": "",
+        }
+        risk = score_resolution_risk(market_dict)
+        if not risk.safe_to_trade:
+            log.info("Skip risky market: %s - %s", market.slug, risk.red_flags)
+            return None
+
+        # --- 3. Find arbitrage ---
+        opp = self.analyze_market(market)
+        if opp is None:
+            return None
+
+        # --- 4. Fee-aware: edge already computed with fee_per_side ---
+        # nothing extra needed
+
+        # --- 5. Kelly sizing ---
+        sizing = recommend_size(SizingParams(
+            bankroll_usd=bankroll_usd,
+            edge=opp.edge,  # decimal
+            win_probability=0.95,  # arb = near-certain для sizing
+            payout_ratio=opp.edge,  # rough estimate
+            confidence=0.7 if risk.overall_risk < 0.2 else 0.5,
+            strategy_type=StrategyType.POLYMARKET_ARB,
+            correlated_exposure_usd=correlated_exposure_usd,
+        ))
+
+        # Tag the opportunity
+        opp.safe_to_trade = risk.safe_to_trade
+        opp.resolution_risk = risk.overall_risk
+        opp.recommended_usd = sizing.recommended_usd
+        opp.sizing_reasoning = sizing.reasoning
+
+        return opp
+
+    def find_safe(
+        self,
+        markets: Iterable[Market] | None = None,
+        *,
+        max_markets: int = 300,
+        bankroll_usd: float = 10_000,
+    ) -> list[ArbitrageOpportunity]:
+        """find() з safety checks та Kelly sizing для кожного arбітражу."""
+        if markets is None:
+            markets = self.client.fetch_markets(active=True, closed=False, max_total=max_markets)
+
+        opps: list[ArbitrageOpportunity] = []
+        for i, m in enumerate(markets, 1):
+            try:
+                opp = self.analyze_market_safely(m, bankroll_usd=bankroll_usd)
+                if opp is not None:
+                    opps.append(opp)
+                    log.info(
+                        "[%s/%s] SAFE arb in %s edge=%.3f rec=$%s risk=%.2f",
+                        i, "?", m.slug, opp.edge, opp.recommended_usd, opp.resolution_risk
+                    )
+                else:
+                    log.debug("[%s] no safe arb in %s", i, m.slug)
+            except Exception as e:
+                log.warning("analyze_market_safely failed for %s: %s", m.id, e)
         opps.sort(key=lambda o: o.edge, reverse=True)
         return opps

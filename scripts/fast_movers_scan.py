@@ -12,6 +12,12 @@ from pathlib import Path
 
 # Add project root
 sys.path.insert(0, str(Path(__file__).parent.parent))
+os.chdir(str(Path(__file__).parent.parent))
+
+# Load Hermes .env FIRST with override, before any project imports
+# that would load the project .env and overwrite with stale/masked values
+from dotenv import load_dotenv
+load_dotenv('/home/hermes/.hermes/.env', override=True)
 
 from crypto_monitor import CoinGeckoClient, FastMoversWatcher
 from crypto_monitor.alerts import FastMoverAlert
@@ -54,17 +60,24 @@ def main():
         body = "\n\n".join(alerts)
         footer = f"\n\n_Виявлено {len(alerts)} сигнал(ів)_"
         full_message = header + body + footer
-        
+
         # Відправити в Telegram
         send_telegram(
             full_message,
             chat_id=FAST_MOVERS_CHAT_ID,
             message_thread_id=FAST_MOVERS_THREAD_ID,
         )
-        
+
         print(full_message)
     else:
-        print("🟢 Fast Movers: різких рухів не виявлено.")
+        msg = "🟢 Fast Movers: різких рухів не виявлено."
+        # Надіслати повідомлення "немає сигналів"
+        send_telegram(
+            msg,
+            chat_id=FAST_MOVERS_CHAT_ID,
+            message_thread_id=FAST_MOVERS_THREAD_ID,
+        )
+        print(msg)
 
     return 0 if not alerts else 1  # 1 = були алерти
 

@@ -103,15 +103,53 @@ def polymarket_scan(
         finder = InternalArbitrageFinder(
             client, min_edge=min_edge, min_volume_usd=min_volume
         )
-        opps = finder.find(max_markets=max_markets)
+        opps = finder.find_safe(max_markets=max_markets)  # v2 — safety + Kelly sizing
     report = format_arbitrage_report(opps)
     console.print(Markdown(report))
     if notify and opps:
         send_telegram(report)
 
 
-@poly.command("monitor")
-def polymarket_monitor(
+@poly.command("scan-safe")
+def polymarket_scan_safe(
+    max_markets: int = typer.Option(300, help="Скільки топ-ринків сканувати"),
+    min_edge: float = typer.Option(0.01),
+    min_volume: float = typer.Option(1000.0),
+    bankroll: float = typer.Option(10_000, help="Bankroll для Kelly sizing ($)"),
+    notify: bool = typer.Option(False, help="Надіслати у Telegram"),
+) -> None:
+    """Арбітраж з safety checks (circuit breakers, resolution risk, Kelly)."""
+    with PolymarketClient() as client:
+        finder = InternalArbitrageFinder(
+            client, min_edge=min_edge, min_volume_usd=min_volume
+        )
+        opps = finder.find_safe(max_markets=max_markets, bankroll_usd=bankroll)
+    report = format_arbitrage_report(opps)
+    console.print(Markdown(report))
+    if notify and opps:
+        send_telegram(report)
+
+
+@poly.command("arb-status")
+def polymarket_arb_status() -> None:
+    """Статус safety system: circuit breakers + чи можна торгувати."""
+    from risk.circuit_breakers import trading_allowed, init_breakers_db
+
+    init_breakers_db()
+    allowed, tripped = trading_allowed()
+    status = "🟢 МОЖНА" if allowed else "🔴 ЗАБЛОКОВАНО"
+    lines = [f"## 💰 Arb Trading Status: {status}", ""]
+    if tripped:
+        lines.append("### 🔗 Tripped Breakers")
+        for t in tripped:
+            lines.append(f"- ❌ `{t}`")
+    else:
+        lines.append("✅ Всі circuit breakers OK")
+    console.print(Markdown("\n".join(lines)))
+
+
+@poly.command("scan")
+def polymarket_scan(
     keyword: str = typer.Argument(..., help="Ключове слово, наприклад 'trump'"),
     interval: int = typer.Option(30, help="Інтервал поллінгу, сек"),
     once: bool = typer.Option(False, help="Зробити один тік і вийти"),

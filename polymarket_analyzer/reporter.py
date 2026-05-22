@@ -21,25 +21,32 @@ def _slug_url(slug: str) -> str:
 def format_arbitrage_report(opps: Iterable[ArbitrageOpportunity]) -> str:
     opps = list(opps)
     if not opps:
-        return ""  # No data — silent
+        return ""
     lines = [
-        "## 🟢 Polymarket: внутрішній арбітраж",
+        "## 🟢 Polymarket: внутрішній арбітраж (v2 — fee-aware + safety)",
         "",
         f"Знайдено **{len(opps)}** можливостей. Топ:",
         "",
-        "| # | Edge | Тип | Ринок | ∑ask | ∑bid | Volume |",
-        "|---|------|-----|-------|------|------|--------|",
+        "| # | Edge | Тип | Ринок | ∑ask | ∑bid | Volume | Risk | Sizing |",
+        "|---|------|-----|-------|------|------|--------|------|--------|",
     ]
     for i, o in enumerate(opps[:25], 1):
         url = _slug_url(o.slug)
-        title = f"[{_short_question(o.question, 55)}]({url})" if url else _short_question(o.question, 55)
+        title = f"[{_short_question(o.question, 50)}]({url})" if url else _short_question(o.question, 50)
         sum_a = f"{o.sum_asks:.4f}" if o.sum_asks is not None else "—"
         sum_b = f"{o.sum_bids:.4f}" if o.sum_bids is not None else "—"
+        risk = "🟢" if getattr(o, "safe_to_trade", True) else "🔴"
+        sizing = getattr(o, "recommended_usd", None)
+        sizing_str = f"${sizing:.0f}" if sizing else "-"
         lines.append(
-            f"| {i} | **{o.edge:+.2%}** | {o.kind} | {title} | {sum_a} | {sum_b} | ${o.volume_usd:,.0f} |"
+            f"| {i} | **{o.edge:+.2%}** | {o.kind} | {title} | {sum_a} | {sum_b} "
+            f"| ${o.volume_usd:,.0f} | {risk} | {sizing_str} |"
         )
     lines.append("")
-    lines.append("> _Edge — потенційний прибуток на 1 USDC. Не враховує slippage й fees._")
+    lines.append(
+        "> _Edge — потенційний прибуток на 1 USDC. Не враховує slippage й fees. "
+        "🟢 = safe_to_trade, 🔴 = resolution risk високий._"
+    )
     return "\n".join(lines)
 
 
