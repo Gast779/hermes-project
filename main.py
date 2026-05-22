@@ -319,6 +319,21 @@ def _alert_callback(alert) -> None:
         chat_id="-1003792129186",
         message_thread_id=26,
     )
+    # --- Event Bus v2 Фаза 2: publish fast_mover event ---
+    try:
+        from coordination.event_bus import get_bus, SignalEvent
+
+        bus = get_bus()
+        bus.publish(
+            SignalEvent(
+                source="crypto_monitor",
+                topic="crypto.fast_mover",
+                payload=alert.to_dict(),
+                priority=1 if alert.pct_change >= 20 else 0,
+            )
+        )
+    except Exception:
+        log.exception("Event bus publish failed")
 
 
 @crypto.command("watch")

@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 import time
 from collections import defaultdict, deque
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from typing import Callable, Deque
 
 from .data_sources import CoinGeckoClient, CoinTicker
@@ -37,6 +37,20 @@ class FastMoverAlert:
     @property
     def chart_url(self) -> str:
         return f"https://www.coingecko.com/en/coins/{self.coin_id}"
+
+    def to_dict(self) -> dict:
+        return {
+            "coin_id": self.coin_id,
+            "symbol": self.symbol,
+            "name": self.name,
+            "price": self.price,
+            "window": self.window,
+            "pct_change": self.pct_change,
+            "volume_24h": self.volume_24h,
+            "market_cap": self.market_cap,
+            "timestamp": self.timestamp,
+            "chart_url": self.chart_url,
+        }
 
 
 AlertCallback = Callable[[FastMoverAlert], None]

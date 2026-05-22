@@ -269,4 +269,23 @@ class InternalArbitrageFinder:
             except Exception as e:
                 log.warning("analyze_market_safely failed for %s: %s", m.id, e)
         opps.sort(key=lambda o: o.edge, reverse=True)
+
+        # --- Event Bus v2 Фаза 2: publish arbitrage events ---
+        if opps:
+            try:
+                from coordination.event_bus import get_bus, SignalEvent
+
+                bus = get_bus()
+                for opp in opps[:20]:
+                    bus.publish(
+                        SignalEvent(
+                            source="polymarket_analyzer",
+                            topic="polymarket.arb",
+                            payload=opp.to_dict(),
+                            priority=2 if opp.edge >= 0.05 else (1 if opp.edge >= 0.02 else 0),
+                        )
+                    )
+            except Exception:
+                log.exception("Event bus publish failed")
+
         return opps
