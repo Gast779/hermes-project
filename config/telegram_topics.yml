@@ -63,6 +63,39 @@ topics:
     skills:
       - polymarket_topic_monitor
 
+  # Phase 6: Нові топіки — створити вручну в Telegram
+  coordinator_digest:
+    name: "📊 Coordinator Digest"
+    description: "Композитний digest від Coordinator Agent"
+    thread_id: 31
+    icon: "📊"
+    skills:
+      - coordinator_digest
+
+  backtest_reports:
+    name: "📈 Backtest Reports"
+    description: "Звіти бектесту стратегій"
+    thread_id: 32
+    icon: "📈"
+    skills:
+      - backtest_reports
+
+  strategy_signals:
+    name: "🎯 Strategy Signals"
+    description: "Сигнали нових стратегій (Deribit, On-chain, LP)"
+    thread_id: 33
+    icon: "🎯"
+    skills:
+      - strategy_signals
+
+  general_alerts:
+    name: "🚨 General Alerts"
+    description: "Загальні алерти та нотифікації"
+    thread_id: 34
+    icon: "🚨"
+    skills:
+      - general_alerts
+
 # Default topic for unmatched skills
 default_topic: english_learning_bot
 
@@ -73,3 +106,4 @@ delivery:
   split_long: true
   include_timestamp: true
   include_source: true
+  coordinator_topic: coordinator_digest  # Phase 6: destination for digests

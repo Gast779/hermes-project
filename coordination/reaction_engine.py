@@ -153,6 +153,29 @@ class ReactionEngine:
             self._actions.append(telegram_action)
             self._dispatch(telegram_action)
 
+    # -- Coordinator Digest -- #
+    def _on_coordinator_digest(self, event: SignalEvent) -> None:
+        """Реакція на coordinator.digest: лог + доставка в Telegram #31."""
+        payload = event.payload
+        log.info("REACT: coordinator digest signal=%s score=%.3f",
+                 payload.get("signal"), payload.get("total_score", 0))
+
+        # Створити Action
+        self._actions.append(Action(
+            agent="reaction_engine",
+            action_type="log",
+            payload={"signal": payload.get("signal"), "score": payload.get("total_score", 0)},
+            created_at=time.time(),
+        ))
+
+        # Phase 6: доставка в Telegram #31
+        if payload.get("total_score", 0) >= 0.7 or payload.get("total_score", 0) <= 0.2:
+            try:
+                from coordination.deliver import deliver_coordinator_digest
+                deliver_coordinator_digest()
+            except Exception as e:
+                log.warning("Digest delivery failed: %s", e)
+
     # -- Dispatch -- #
     def _dispatch(self, action: Action) -> None:
         """Викликати всі зареєстровані обробники для action_type."""
@@ -176,6 +199,7 @@ class ReactionEngine:
         """Відписатися."""
         self.bus.unsubscribe("crypto.fast_mover", self._on_crypto_fast_mover)
         self.bus.unsubscribe("polymarket.arb", self._on_polymarket_arb)
+        self.bus.unsubscribe("coordinator.digest", self._on_coordinator_digest)
         self._started = False
         log.info("ReactionEngine stopped")
 
