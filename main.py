@@ -1759,5 +1759,64 @@ def strategy_pools(
         send_telegram(f"📊 Топ-3 LP пули {chain}: {', '.join(p.name for p in pools[:3])}")
 
 
+# =========================================================================== #
+# COORDINATOR — Phase 5
+# =========================================================================== #
+@app.command("coordinator")
+def coordinator_cmd(
+    action: str = typer.Argument("digest", help="digest | status | history | generate"),
+    last_n: int = typer.Option(10, help="Кількість записів для history"),
+) -> None:
+    """Coordinator Agent — композитні сигнали та digest."""
+    from coordination.coordinator import get_coordinator
+    coord = get_coordinator()
+
+    if action == "status":
+        result = coord.compute_composite()
+        table = Table(title="Coordinator Status")
+        table.add_column("Сигнал")
+        table.add_column("Score")
+        table.add_column("Факторів")
+        table.add_column("Топ можливостей")
+        table.add_row(
+            result.signal.upper(),
+            f"{result.total_score:.2f}",
+            str(len(result.factors)),
+            str(len(result.top_opportunities)),
+        )
+        console.print(table)
+        if result.factors:
+            console.print(f"\n[bold]Фактори:[/]")
+            for f in result.factors:
+                console.print(f"  • {f.factor}: {f.raw_score:.2f} — {f.description}")
+
+    elif action == "digest":
+        console.print("[cyan]Генерація digest...[/]")
+        text = coord.generate_digest()
+        console.print(text)
+
+    elif action == "history":
+        history = coord.get_history(last_n=last_n)
+        if not history:
+            console.print("[yellow]Історія порожня.[/]")
+            return
+        table = Table(title=f"Coordinator History (останні {len(history)})")
+        table.add_column("Час")
+        table.add_column("Сигнал")
+        table.add_column("Score")
+        table.add_column("Факторів")
+        for h in history:
+            ts = datetime.fromtimestamp(h["timestamp"]).strftime("%m-%d %H:%M")
+            table.add_row(ts, h["signal"].upper(), f"{h['total_score']:.2f}", str(len(h.get("factors", []))))
+        console.print(table)
+
+    elif action == "generate":
+        coord.publish_digest()
+        console.print("[green]✅ Digest опубліковано в event bus[/]")
+
+    else:
+        console.print(f"[red]Невідома дія: {action}[/]")
+
+
 if __name__ == "__main__":
     app()

@@ -30,7 +30,7 @@ from typing import Literal
 log = logging.getLogger(__name__)
 
 Mode = Literal["architect", "code", "debug", "ask", "orchestrate"]
-AgentName = Literal["english_bot", "crypto_monitor", "polymarket_analyzer", "mirofish"]
+AgentName = Literal["english_bot", "crypto_monitor", "polymarket_analyzer", "coordinator", "mirofish"]
 
 MODE_DESCRIPTIONS: dict[str, str] = {
     "architect": "🏗️ ARCHITECT — Планує аналіз, визначає метрики, проєктує архітектуру",
@@ -63,7 +63,7 @@ class RooFlowEngine:
         self._load_states()
 
     def _ensure_dirs(self) -> None:
-        for agent in ("english_bot", "crypto_monitor", "polymarket_analyzer", "mirofish"):
+        for agent in ("english_bot", "crypto_monitor", "polymarket_analyzer", "coordinator", "mirofish"):
             for mb_file in (
                 "activeContext.md",
                 "productContext.md",
@@ -95,9 +95,9 @@ class RooFlowEngine:
     @staticmethod
     def _default_shared_content(filename: str) -> str:
         templates = {
-            "projectBrief.md": "# Project Brief: hermes_project\n\n## Мета\nMulti-agent система для трейдингу, аналітики, навчання англійської та прогнозування\n\n## Агенти\n- english_bot — тренер англійської\n- crypto_monitor — крипто-моніторинг\n- polymarket_analyzer — Polymarket аналітика\n- mirofish — Swarm-intelligence prediction engine\n\n## Технології\nPython 3.11+, Grok API, SQLite, Rich, Typer, OASIS\n",
+            "projectBrief.md": "# Project Brief: hermes_project\n\n## Мета\nMulti-agent система для трейдингу, аналітики, навчання англійської та прогнозування\n\n## Агенти\n- english_bot — тренер англійської\n- crypto_monitor — крипто-моніторинг\n- polymarket_analyzer — Polymarket аналітика\n- coordinator — Композитні сигнали\n- mirofish — Swarm-intelligence prediction engine\n\n## Технології\nPython 3.11+, Grok API, SQLite, Rich, Typer, OASIS\n",
             "handoffs.md": "# Handoffs\n\n## Активні завдання\n\n## Виконані завдання\n\n## Формат\n```\n- [DATE] FROM → TO: Завдання\n  - Статус: active / completed / blocked\n  - Результат: ...\n```\n",
-            "dataContracts.md": "# Data Contracts\n\n## Формати обміну\n- JSON для конфігів\n- Markdown для звітів\n- SQLite для історії\n- Prediction Packets для прогнозів\n\n## API\n- english_bot: уроки, квізи, флеш-карти\n- crypto_monitor: ціни, алерти, звіти\n- polymarket_analyzer: арбітраж, моніторинг\n- mirofish: sentiment, prediction, knowledge graph\n",
+            "dataContracts.md": "# Data Contracts\n\n## Формати обміну\n- JSON для конфігів\n- Markdown для звітів\n- SQLite для історії\n- Prediction Packets для прогнозів\n\n## API\n- english_bot: уроки, квізи, флеш-карти\n- crypto_monitor: ціни, алерти, звіти\n- polymarket_analyzer: арбітраж, моніторинг\n- coordinator: композитні сигнали, digest\n- mirofish: sentiment, prediction, knowledge graph\n",
             "executionLog.md": "# Execution Log\n\n## Записи\n\n## Формат\n```\n- [DATE] [AGENT] [MODE] — Дія\n  - Результат: ...\n  - Час виконання: ...\n```\n",
             "predictionRegistry.md": "# Prediction Registry\n\n## Активні Прогнози\n\n## Завершені Прогнози\n\n## Формат\n```\n- [DATE] [AGENT] [MARKET] — Прогноз\n  - Ймовірність: ...\n  - Сценарії: baseline / bull / bear\n  - Каталізатори: ...\n  - Brier Score: ...\n```\n",
         }
@@ -107,7 +107,7 @@ class RooFlowEngine:
         return self.agents_dir / agent / "state.json"
 
     def _load_states(self) -> None:
-        for agent in ("english_bot", "crypto_monitor", "polymarket_analyzer", "mirofish"):
+        for agent in ("english_bot", "crypto_monitor", "polymarket_analyzer", "coordinator", "mirofish"):
             path = self._state_path(agent)
             if path.exists():
                 data = json.loads(path.read_text(encoding="utf-8"))
