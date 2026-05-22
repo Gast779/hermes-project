@@ -29,6 +29,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -82,10 +83,12 @@ poly = typer.Typer(help="Polymarket аналітика")
 crypto = typer.Typer(help="Криптовалютні звіти та алерти")
 english = typer.Typer(help="Тренер англійської")
 rooflow = typer.Typer(help="RooFlow multi-agent orchestration")
+backtest_ = typer.Typer(help="Backtest framework для стратегій")
 app.add_typer(poly, name="polymarket")
 app.add_typer(crypto, name="crypto")
 app.add_typer(english, name="english")
 app.add_typer(rooflow, name="rooflow")
+app.add_typer(backtest_, name="backtest")
 
 
 # =========================================================================== #
@@ -1490,6 +1493,128 @@ def list_skills() -> None:
     for s in HermesExecutor().list_skills():
         table.add_row(s["id"], s["name"], "✅" if s["enabled"] else "❌", s["description"])
     console.print(table)
+
+
+# =========================================================================== #
+# BACKTEST
+# =========================================================================== #
+@backtest_.command("record")
+def backtest_record(
+    start: bool = typer.Option(True, help="Почати запис подій"),
+) -> None:
+    """Запис подій з Event Bus для backtest."""
+    from backtest import get_recorder
+    rec = get_recorder()
+    if start:
+        rec.start_recording()
+        console.print("[green]✅ Запис подій розпочато (SQLite persistence)[/]")
+    else:
+        rec.stop_recording()
+        console.print("[yellow]⏹ Запис зупинено[/]")
+
+
+@backtest_.command("stats")
+def backtest_stats(
+    strategy: str = typer.Option("all", help="polymarket_arb | crypto_fast_mover | all"),
+    days: int = typer.Option(7, help="Скільки останніх днів"),
+) -> None:
+    """Статистика backtest (кількість сигналів за період)."""
+    from backtest import get_recorder
+    rec = get_recorder()
+    since = time.time() - days * 86400
+    if strategy == "all":
+        signals = rec.get_signals(since=since, limit=100000)
+    else:
+        signals = rec.get_signals(strategy=strategy, since=since, limit=100000)
+    console.print(f"[bold]📊 Backtest Stats ({days} days)[/]")
+    console.print(f"Всього сигналів: {len(signals)}")
+    if not signals:
+        console.print("[yellow]Сигналів не знайдено[/]")
+        return
+    first = signals[-1]  # oldest
+    last = signals[0]  # newest
+    console.print(f"Перший: {datetime.fromtimestamp(first.timestamp)} — {first.source}/{first.topic}")
+    console.print(f"Останній: {datetime.fromtimestamp(last.timestamp)} — {last.source}/{last.topic}")
+
+
+@backtest_.command("evaluate")
+def backtest_evaluate(
+    strategy: str = typer.Argument("polymarket_arb", help="Стратегія для оцінки"),
+    days: int = typer.Option(30, help="Період у днях"),
+    export: bool = typer.Option(False, help="Експортувати у JSON"),
+) -> None:
+    """Оцінити стратегію: win_rate, sharpe, drawdown, profit_factor."""
+    from backtest import get_evaluator
+    from rich.table import Table
+    ev = get_evaluator()
+    report = ev.evaluate(strategy=strategy, days=days)
+    if export:
+        path = ev.export_report(report)
+        console.print(f"[green]💾 Експортовано: {path}[/]")
+
+    console.print(f"\n[bold cyan]Backtest Report: {report.strategy} ({report.period_days} days)[/]")
+    
+    # Metrics table
+    table = Table(title="Strategy Metrics")
+    table.add_column("Метрика", justify="right")
+    table.add_column("Значення", justify="right")
+    m = report.metrics
+    table.add_row("Всього сигналів", str(m.total))
+    table.add_row("Winning", str(m.winning))
+    table.add_row("Losing", str(m.losing))
+    table.add_row("Win Rate", f"{m.win_rate:.1%}")
+    table.add_row("Середній Edge", f"{m.avg_edge:.3f}")
+    table.add_row("Max Edge", f"{m.max_edge:.3f}")
+    table.add_row("Min Edge", f"{m.min_edge:.3f}")
+    table.add_row("Sharpe", f"{m.sharpe_ratio:.2f}" if m.sharpe_ratio else "N/A")
+    table.add_row("Profit Factor", f"{m.profit_factor:.2f}" if m.profit_factor else "N/A")
+    table.add_row("Avg Size ($)", f"{m.avg_recommended_usd:,.0f}" if m.avg_recommended_usd else "N/A")
+    table.add_row("Max Drawdown", f"{report.drawdown:.1%}" if report.drawdown is not None else "N/A")
+    console.print(table)
+
+    # Daily stats (last 10)
+    if report.daily:
+        dt = Table(title=f"Daily Stats (last {min(10, len(report.daily))})")
+        dt.add_column("День")
+        dt.add_column("Сигналів")
+        dt.add_column("Сумарний Edge", justify="right")
+        dt.add_column("Avg Edge", justify="right")
+        for d in report.daily[-10:]:
+            dt.add_row(d.date, str(d.signals_count), f"{d.total_edge:.3f}", f"{d.avg_edge:.3f}")
+        console.print(dt)
+
+
+@backtest_.command("all")
+def backtest_all(
+    days: int = typer.Option(30, help="Період у днях"),
+    export: bool = typer.Option(False),
+) -> None:
+    """Оцінити всі стратегії порівняльно."""
+    from backtest import get_evaluator
+    ev = get_evaluator()
+    reports = ev.evaluate_all(days=days)
+    table = Table(title=f"Backtest: All Strategies ({days} days)")
+    table.add_column("Стратегія")
+    table.add_column("Сигналів", justify="right")
+    table.add_column("Win Rate", justify="right")
+    table.add_column("Avg Edge", justify="right")
+    table.add_column("Sharpe", justify="right")
+    table.add_column("Max DD", justify="right")
+    for name, report in reports.items():
+        m = report.metrics
+        table.add_row(
+            name,
+            str(m.total),
+            f"{m.win_rate:.1%}",
+            f"{m.avg_edge:.3f}",
+            f"{m.sharpe_ratio:.2f}" if m.sharpe_ratio else "—",
+            f"{report.drawdown:.1%}" if report.drawdown is not None else "—",
+        )
+    console.print(table)
+    if export:
+        for name, report in reports.items():
+            ev.export_report(report)
+        console.print("[green]💾 Всі звіти експортовано[/]")
 
 
 if __name__ == "__main__":
