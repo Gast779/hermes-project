@@ -90,6 +90,10 @@ app.add_typer(english, name="english")
 app.add_typer(rooflow, name="rooflow")
 app.add_typer(backtest_, name="backtest")
 
+# Phase 4: New strategies
+strat = typer.Typer(help="Нові стратегії: Deribit, On-chain, LP")
+app.add_typer(strat, name="strategy")
+
 
 # =========================================================================== #
 # POLYMARKET
@@ -1615,6 +1619,144 @@ def backtest_all(
         for name, report in reports.items():
             ev.export_report(report)
         console.print("[green]💾 Всі звіти експортовано[/]")
+
+
+# =========================================================================== #
+# STRATEGIES — Phase 4
+# =========================================================================== #
+@strat.command("deribit")
+def strategy_deribit(
+    currency: str = typer.Option("BTC", help="BTC | ETH"),
+    min_basis_bps: float = typer.Option(50.0, help="Мін. basis у basis points"),
+    notify: bool = typer.Option(False, help="Надіслати у Telegram / Event Bus"),
+) -> None:
+    """Deribit basis arbitrage + funding rate."""
+    from deribit import DeribitAnalyzer
+    with DeribitAnalyzer() as analyzer:
+        opps = analyzer.find_basis_arbitrage(currency=currency, min_basis_bps=min_basis_bps)
+    if not opps:
+        console.print("[yellow]Жодних basis opportunities не знайдено.[/]")
+        return
+
+    table = Table(title=f"Deribit Basis Arb ({currency})")
+    table.add_column("Symbol")
+    table.add_column("Basis", justify="right")
+    table.add_column("Futures", justify="right")
+    table.add_column("Spot", justify="right")
+    table.add_column("Funding (1h)", justify="right")
+    table.add_column("Signal")
+    for o in opps:
+        table.add_row(
+            o.symbol,
+            f"[green]{o.basis_percent:+.2f}%[/]" if o.basis > 0 else f"[red]{o.basis_percent:+.2f}%[/]",
+            f"{o.futures_price:,.0f}",
+            f"{o.spot_price:,.0f}",
+            f"{o.funding_rate_1h or 0:.4%}" if o.funding_rate_1h else "—",
+            o.signal[:12],
+        )
+    console.print(table)
+
+    if notify:
+        try:
+            from coordination.event_bus import get_bus, SignalEvent
+            bus = get_bus()
+            for o in opps:
+                bus.publish(SignalEvent(
+                    source="strategy_manager",
+                    topic="strategies.deribit",
+                    payload={
+                        "symbol": o.symbol,
+                        "basis_percent": o.basis_percent,
+                        "funding_rate_1h": o.funding_rate_1h,
+                        "Signal": o.signal,
+                    },
+                    priority=1 if abs(o.basis_percent) >= 1.0 else 0,
+                ))
+        except Exception:
+            log.exception("Event bus publish failed")
+
+
+@strat.command("whales")
+def strategy_whales(
+    blockchain: str = typer.Option("BTC", help="BTC | ETH"),
+    min_usd: float = typer.Option(1_000_000, help="Мін. велич у USD"),
+    hours: int = typer.Option(24, help="Скільки годин назад"),
+    notify: bool = typer.Option(False, help="Надіслати у Telegram"),
+) -> None:
+    """On-chain whale tracking."""
+    from onchain import OnChainMonitor
+    monitor = OnChainMonitor()
+    try:
+        txs = monitor.get_whale_transactions(blockchain=blockchain, min_usd=min_usd, hours=hours)
+    finally:
+        monitor.close()
+
+    if not txs:
+        console.print("[yellow]Жодних whale транзакцій не знайдено.[/]")
+        return
+
+    table = Table(title=f"Whale Transactions ({blockchain}, last {hours}h)")
+    table.add_column("TXID")
+    table.add_column("Value USD", justify="right")
+    table.add_column("Direction")
+    table.add_column("Fee")
+    for tx in txs:
+        table.add_row(
+            tx.txid[:20] + "…",
+            f"[bold]{tx.value_usd:,.0f}[/]",
+            tx.direction or "?",
+            f"${tx.fee:.4f}",
+        )
+    console.print(table)
+
+    for tx in txs:
+        monitor.publish_to_bus(tx)
+    if notify:
+        text = f"🐋 {len(txs)} whale txs on {blockchain} (${min_usd:,.0f}+)"
+        send_telegram(text)
+
+
+@strat.command("pools")
+def strategy_pools(
+    chain: str = typer.Option("ethereum", help="ethereum | arbitrum | polygon"),
+    min_tvl: float = typer.Option(1_000_000, help="Мін. TVL у USD"),
+    top_n: int = typer.Option(10, help="Скільки топ-пулів показати"),
+    notify: bool = typer.Option(False, help="Надіслати у Telegram"),
+) -> None:
+    """LP Yield Scanner: найкращі пули з risk-adjusted returns."""
+    from lp_yield import LPScanner
+    scanner = LPScanner()
+    try:
+        pools = scanner.find_best_pools(chain=chain, min_tvl_usd=min_tvl, top_n=top_n)
+    finally:
+        scanner.close()
+
+    if not pools:
+        console.print("[yellow]Жодних пулів не знайдено.[/]")
+        return
+
+    table = Table(title=f"Best LP Pools ({chain}, min TVL ${min_tvl:,.0f})")
+    table.add_column("Пул")
+    table.add_column("Протокол")
+    table.add_column("APY", justify="right")
+    table.add_column("TVL", justify="right")
+    table.add_column("Ризик", justify="right")
+    table.add_column("IL 1м", justify="right")
+    for p in pools:
+        table.add_row(
+            p.name,
+            p.protocol,
+            f"[green]{p.apy:.2f}%[/]" if p.apy >= 5 else f"{p.apy:.2f}%",
+            f"${p.tvl_usd:,.0f}",
+            "[red]%.1f" % (p.risk_score*10) if p.risk_score >= 0.5 else "%.1f" % (p.risk_score*10),
+            f"{p.impermanent_loss_1m or 0:.2%}",
+        )
+    console.print(table)
+
+    for p in pools[:3]:
+        scanner.publish_pool(p)
+    if notify and pools:
+        send_telegram(f"📊 Топ-3 LP пули {chain}: {', '.join(p.name for p in pools[:3])}")
 
 
 if __name__ == "__main__":
