@@ -18,7 +18,6 @@ Usage:
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
 from statistics import mean, stdev
 from typing import Sequence

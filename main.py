@@ -28,7 +28,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import sys
 import time
 from datetime import datetime
 from pathlib import Path
@@ -40,13 +39,11 @@ from rich.table import Table
 
 from config import env, settings, setup_logging
 from crypto_monitor import (
-    BinanceClient,
     CoinGeckoClient,
     FastMoversWatcher,
     build_scheduler,
     generate_daily_report,
 )
-from crypto_monitor.scheduler import add_cron_job
 from english_bot import (
     DailyEngine,
     EnglishBot,
@@ -99,7 +96,7 @@ app.add_typer(strat, name="strategy")
 # POLYMARKET
 # =========================================================================== #
 @poly.command("scan")
-def polymarket_scan(
+def polymarket_scan_v2(
     max_markets: int = typer.Option(300, help="Скільки топ-ринків сканувати"),
     min_edge: float = typer.Option(0.01, help="Мін. edge для сигналу (1% = 0.01)"),
     min_volume: float = typer.Option(1000.0, help="Мін. 24h volume у USDC"),

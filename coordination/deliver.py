@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_GROUP_ID = os.environ.get("TELEGRAM_GROUP_ID", "-1003792129186")
-CO_TOPIC = 31  # coordinator_digest
+CO_TOPIC = 824  # coordinator_digest
 
 
 def deliver_coordinator_digest() -> None:

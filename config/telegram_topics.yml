@@ -67,7 +67,7 @@ topics:
   coordinator_digest:
     name: "📊 Coordinator Digest"
     description: "Композитний digest від Coordinator Agent"
-    thread_id: 31
+    thread_id: 824
     icon: "📊"
     skills:
       - coordinator_digest
@@ -75,7 +75,7 @@ topics:
   backtest_reports:
     name: "📈 Backtest Reports"
     description: "Звіти бектесту стратегій"
-    thread_id: 32
+    thread_id: 826
     icon: "📈"
     skills:
       - backtest_reports
@@ -83,7 +83,7 @@ topics:
   strategy_signals:
     name: "🎯 Strategy Signals"
     description: "Сигнали нових стратегій (Deribit, On-chain, LP)"
-    thread_id: 33
+    thread_id: 827
     icon: "🎯"
     skills:
       - strategy_signals
@@ -91,7 +91,7 @@ topics:
   general_alerts:
     name: "🚨 General Alerts"
     description: "Загальні алерти та нотифікації"
-    thread_id: 34
+    thread_id: 828
     icon: "🚨"
     skills:
       - general_alerts
