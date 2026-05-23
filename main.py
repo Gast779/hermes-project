@@ -821,6 +821,61 @@ def english_stats() -> None:
             console.print(f"  • {spot}")
 
 
+@english.command("review")
+def english_review(
+    max_cards: int = typer.Option(20, help="Макс. кількість карток"),
+    notify: bool = typer.Option(False, help="Надіслати у Telegram thread 24"),
+) -> None:
+    """📝 SRS повторення: картки на сьогодні за SM-2 алгоритмом."""
+    from english_bot.english_bot_upgrade import EnglishTutor
+
+    tutor = EnglishTutor()
+    try:
+        report = tutor.review_session("demo_user", max_cards=max_cards)
+        console.print(report)
+        if notify:
+            send_telegram(report, chat_id="-1003792129186", message_thread_id=_get_topic("english"))
+    finally:
+        tutor.close()
+
+
+@english.command("adaptive")
+def english_adaptive(
+    kind: str = typer.Argument("grammar", help="Урок: grammar | vocab | listening | speaking"),
+    level: str = typer.Option("B1", help="CEFR рівень"),
+    notify: bool = typer.Option(False, help="Надіслати у Telegram thread 24"),
+) -> None:
+    """🎯 Adaptive lesson — CEFR + error patterns + i+1 comprehensible input."""
+    from english_bot.english_bot_upgrade import EnglishTutor
+
+    tutor = EnglishTutor()
+    try:
+        # Генеруємо адаптивний урок
+        report = tutor.daily_lesson("demo_user")
+        console.print(report)
+        if notify:
+            send_telegram(report, chat_id="-1003792129186", message_thread_id=_get_topic("english"))
+    finally:
+        tutor.close()
+
+
+@english.command("errors")
+def english_errors(
+    notify: bool = typer.Option(False, help="Надіслати у Telegram thread 24"),
+) -> None:
+    """❌ Ваші помилки: часті помилки + цільові вправи."""
+    from english_bot.english_bot_upgrade import EnglishTutor
+
+    tutor = EnglishTutor()
+    try:
+        report = tutor.grammar_exercise("demo_user")
+        console.print(report)
+        if notify:
+            send_telegram(report, chat_id="-1003792129186", message_thread_id=_get_topic("english"))
+    finally:
+        tutor.close()
+
+
 # =========================================================================== #
 # ROOFLOW
 # =========================================================================== #
