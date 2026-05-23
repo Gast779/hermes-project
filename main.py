@@ -273,6 +273,37 @@ def polymarket_depth_scan(
     console.print(table)
 
 
+@poly.command("whale")
+def polymarket_whale(
+    mode: str = typer.Argument("scan", help="Режим: scan | watch"),
+    limit: int = typer.Option(50, help="Кількість ринків для сканування"),
+    min_score: float = typer.Option(0.6, help="Мін. composite score (0.0–1.0)"),
+    notify: bool = typer.Option(False, help="Надіслати HIGH-сповіщення у Telegram"),
+) -> None:
+    """Детектор китів (whale signals) на Polymarket."""
+    from polymarket_analyzer.whale_detector import WhaleScanner
+
+    scanner = WhaleScanner()
+    if mode == "watch":
+        scanner.watch(notify=notify)
+    else:
+        results = scanner.scan(limit=limit, min_score=min_score, notify=notify)
+        if not results:
+            console.print("[yellow]Жодних whale-сигналів не виявлено.[/]")
+            return
+        table = Table(title=f"🐋 Whale Signals — {len(results)} found")
+        table.add_column("Score")
+        table.add_column("Market")
+        table.add_column("Signals")
+        for r in results[:15]:
+            table.add_row(
+                f"{r['composite_score']:.0%}",
+                r['question'][:50] + ("…" if len(r['question']) > 50 else ""),
+                ", ".join(r['signals'][:4]),
+            )
+        console.print(table)
+
+
 # =========================================================================== #
 # CRYPTO
 # =========================================================================== #

@@ -24,6 +24,11 @@ from .topic_monitor import TopicMonitor
 from .cross_market import CrossMarketAnalyzer, ExternalMarket
 from .reporter import format_arbitrage_report, format_topic_report
 
+try:
+    from .whale_detector import WhaleScanner
+except ImportError:
+    WhaleScanner = None  # type: ignore[misc,assignment]
+
 __all__ = [
     "PolymarketClient",
     "InternalArbitrageFinder",
@@ -33,4 +38,5 @@ __all__ = [
     "ExternalMarket",
     "format_arbitrage_report",
     "format_topic_report",
+    "WhaleScanner",
 ]

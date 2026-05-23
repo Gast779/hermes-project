@@ -30,7 +30,8 @@ DATA_API = "https://data-api.polymarket.com"
 CLOB_API = "https://clob.polymarket.com"
 POLYGON_RPC = "https://polygon-rpc.com"
 
-KB_PATH = Path.home() / ".hermes" / "hermes_knowledge_base.db"
+PROJECT_ROOT = Path(__file__).parent.parent
+KB_PATH = PROJECT_ROOT / "hermes_knowledge_base.db"
 
 WHALE_ALERT_THRESHOLD = 0.70  # Composite score >= 70% = HIGH alert
 VOLUME_SPIKE_MULTIPLIER = 5.0  # 5x average = spike
@@ -605,6 +606,55 @@ class WhaleScanner:
             except Exception as e:
                 print(f"[WhaleScanner] Error: {e}")
                 time.sleep(interval_seconds)
+
+    def scan(self, limit: int = 50, min_score: float = 0.6, notify: bool = False) -> List[dict]:
+        """Сканувати ринки та повернути whale-сигнали у форматі списку dict."""
+        from scripts.notify_telegram import send_telegram
+
+        alerts = self.scan_recent_trades(min_cash=1000)
+        results = []
+        for alert in alerts:
+            if alert.composite_score < min_score:
+                continue
+            result = {
+                "composite_score": alert.composite_score,
+                "question": alert.market_question,
+                "signals": [s.name for s in alert.signals_triggered],
+                "market_id": alert.market_question,
+                "wallet": alert.wallet_address,
+            }
+            results.append(result)
+            if notify and alert.composite_score >= WHALE_ALERT_THRESHOLD:
+                msg = (
+                    f"🐋 <b>WHALE ALERT</b>\n\n"
+                    f"<b>{alert.market_question}</b>\n"
+                    f"Оцінка: {alert.composite_score:.0%}\n"
+                    f"Сигнали: {', '.join(s.name for s in alert.signals_triggered)}\n"
+                    f"Гаманець: <code>{alert.wallet_address}</code>\n"
+                    f"Розмір: ${alert.trade_size_usd:,.0f}\n\n"
+                    f"{alert.alert_message_uk or alert.alert_message_en}"
+                )
+                try:
+                    send_telegram(msg)
+                except Exception:
+                    pass
+        return results[:limit]
+
+    def watch(self, notify: bool = False):
+        """Безперервний моніторинг whale-сигналів."""
+        print("[WhaleScanner] Watch mode started (Ctrl+C to stop)")
+        while True:
+            try:
+                self.scan(notify=notify)
+                import time
+                time.sleep(30)
+            except KeyboardInterrupt:
+                print("[WhaleScanner] Watch stopped")
+                break
+            except Exception as e:
+                print(f"[WhaleScanner] Error: {e}")
+                import time
+                time.sleep(30)
 
 
 # ═══════════════════════════════════════════════════════════════════

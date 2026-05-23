@@ -28,8 +28,9 @@ import math
 # Configuration
 # ═══════════════════════════════════════════════════════════════════
 
-KB_PATH = Path.home() / ".hermes" / "hermes_knowledge_base.db"
-ENGLISH_DB = Path.home() / ".hermes" / "english_learning.db"
+PROJECT_ROOT = Path(__file__).parent.parent
+KB_PATH = PROJECT_ROOT / "hermes_knowledge_base.db"
+ENGLISH_DB = PROJECT_ROOT / "english_learning.db"
 
 CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"]
 
