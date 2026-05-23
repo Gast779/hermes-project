@@ -1,136 +1,130 @@
 # Hermes Multi-Agent System
 
-Python-проєкт з трьох автономних модулів:
+5 автономних агентів з cross-agent event bus, composite digest та Telegram delivery.
 
-1. **`english_bot/`** — персональний тренер англійської (Grok + Whisper).
-2. **`crypto_monitor/`** — звіти CoinGecko 3×/день + real-time fast-movers.
-3. **`polymarket_analyzer/`** — Polymarket: top-of-book і depth-aware арбітраж, моніторинг тем, cross-market vs Kalshi, news linker.
+## Агенти
 
-> ⚠️ **Polymarket з січня 2026 заблокований в Україні.** Для роботи потрібен 
-> VPN/проксі. У `.env` є змінна `POLYMARKET_PROXY` (HTTP або SOCKS5).
-> CoinGecko, Grok, Kalshi, RSS-фіди з України працюють нормально.
+| # | Агент | Функціонал | Telegram тема |
+|---|-------|-----------|---------------|
+| 1 | 🇬🇧 **english_learning_bot** | AI-тренер англійської (Grok + Whisper) | #24 |
+| 2 | 💰 **crypto_monitor** | CoinGecko звіти 3×/день + fast movers | #25, #26 |
+| 3 | 🎯 **polymarket_analyzer** | Арбітраж, deep scan, cross-market, news linker, topic monitor | #27–#30 |
+| 4 | 🏦 **strategy_engine** | Deribit basis, on-chain whales, LP yield | #32–#34 |
+| 5 | 🧠 **coordinator** | Композитний digest: зважена оцінка з усіх сигналів | #31 |
 
-## Швидкий старт
+## Telegram теми (11)
+
+| # | Назва | Опис |
+|---|-------|------|
+| 24 | 🇬🇧 English Learning | Уроки, квізи, щоденний челендж |
+| 25 | 💰 Crypto Daily Reports | Ранок / день / вечір |
+| 26 | 🚀 Fast Movers | Різкі рухи >5% |
+| 27 | 🎯 Polymarket Arbitrage | Top-of-book арбітраж |
+| 28 | 🔍 Polymarket Deep | Depth-aware + slippage |
+| 29 | 📰 Polymarket News | RSS → ринки |
+| 30 | 👁️ Topic Monitor | Моніторинг теми |
+| **31** | **📊 Coordinator Digest** | **Композитний score з усіх агентів** |
+| **32** | **📈 Backtest Reports** | **Win rate, sharpe, drawdown** |
+| **33** | **🎯 Strategy Signals** | **Deribit + On-chain + LP** |
+| **34** | **🚨 General Alerts** | **Критичні cross-agent + health** |
+
+## CLI координатора
 
 ```bash
-# 1. Установка
-git clone <repo> && cd hermes_project
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+# 🧠 Coordinator
+python main.py coordinator generate              # згенерувати дайджест
+python main.py coordinator status                # оцінки всіх сигналів
+python main.py coordinator history --days 7        # історія
 
-# 2. Конфіг
-cp config/.env.example .env
-# відредагуй .env: XAI_API_KEY, COINGECKO_API_KEY, TELEGRAM_*, POLYMARKET_PROXY
-
-# 3. Перевірка що все працює
-python scripts/smoke_test.py
+# 🏦 Strategy Engine
+python main.py deribit scan [BTC|ETH]           # basis arbitrage
+python main.py onchain whales [BTC|ETH|All]      # whale transactions
+python main.py lp scan [ethereum|arbitrum]       # LP pools по APY
+python main.py backtest                          # backtest 4 стратегій
 ```
 
-## Команди
+## Бектест
 
-### Polymarket
 ```bash
-python main.py polymarket scan                       # top-of-book арбітраж
-python main.py polymarket depth-scan                 # із slippage-аналізом
-python main.py polymarket monitor "trump"            # моніторинг теми
-python main.py polymarket monitor "btc" --once       # один тік
-python main.py polymarket cross --keyword election   # vs Kalshi
-python main.py polymarket news                       # новини → ринки
-python main.py polymarket realtime --tokens 123... 456...
+python -m backtest.recorder          # записати сигнали
+python main.py backtest              # запустити backtest
+python main.py backtest --compare    # порівняти стратегії
 ```
 
-### Crypto
-```bash
-python main.py crypto report --notify     # звіт + Telegram
-python main.py crypto watch               # daemon fast-movers
-```
-
-### English
-```bash
-python main.py english chat                                   # REPL з тьютором
-python main.py english lesson grammar                         # урок граматики
-python main.py english voice recording.ogg --backend openai   # голос
-```
-
-### Історія / БД
-```bash
-python main.py db stats                   # скільки записано
-python main.py db alerts --coin bitcoin   # останні алерти
-python main.py db arb                     # арбітражі за історією
-```
-
-### Розклад
-```bash
-python main.py scheduler                  # запустити всі cron-задачі
-python main.py skills                     # перелік для Hermes Dashboard
-```
+Метрики: win rate, sharpe, max drawdown, profit factor, Kelly fraction.
 
 ## Структура
 
 ```
 hermes_project/
-├── english_bot/                # уроки + Grok + Whisper
-│   ├── grok_client.py
-│   ├── lesson_planner.py
-│   ├── handlers.py
-│   ├── prompts.py
-│   └── transcriber.py          # OpenAI Whisper / faster-whisper
-├── crypto_monitor/             # CoinGecko + Binance + алерти
-│   ├── data_sources.py
-│   ├── reports.py
-│   ├── alerts.py
-│   └── scheduler.py
-├── polymarket_analyzer/        # Gamma + CLOB + WebSocket
-│   ├── client.py               # з підтримкою proxy
-│   ├── arbitrage_internal.py
-│   ├── depth_arbitrage.py      # повний orderbook + slippage
-│   ├── cross_market.py
-│   ├── topic_monitor.py
-│   ├── realtime.py
-│   ├── news_linker.py          # RSS → ринки
-│   └── reporter.py
-├── hermes_integration/
-├── config/
-├── docs/
-│   ├── polymarket.md
-│   ├── crypto.md
-│   └── english.md
+├── english_bot/              # AI-тренер англійської
+├── crypto_monitor/           # CoinGecko + алерти
+├── polymarket_analyzer/      # Gamma + CLOB + cross-market
+├── deribit/                  # Basis arbitrage + funding
+├── onchain/                  # Whale transactions
+├── lp_yield/                 # DeFiLlama LP scanner
+├── coordination/
+│   ├── event_bus.py          # Cross-agent pub/sub
+│   ├── reaction_engine.py     # Дії на сигнали
+│   ├── coordinator.py         # Композитний digest
+│   └── deliver.py             # Telegram delivery
+├── strategies/               # Реєстр стратегій + backtest
+├── backtest/                 # Бектест-фреймворк
 ├── scripts/
-│   ├── notify_telegram.py
-│   └── smoke_test.py           # перевірка живих API
-├── tests/                      # 22 unit-тести
-├── storage.py                  # SQLite сховище
-├── main.py
-└── requirements.txt
+│   ├── coordinator_digest.py   # Cron: кожні 4h → #31
+│   ├── deribit_scan.py         # Cron: 09:00 → #33
+│   ├── lp_scan.py              # Cron: Sun 10:00 → #33
+│   ├── onchain_whales.py       # Cron: кожні 6h → #34
+│   └── health_check.py         # Cron: щогодини → #34
+├── tests/                    # 106 unit-тестів
+└── config/
+    ├── telegram_topics.yml    # 11 тем з thread_id
+    └── skills_config.yml      # 5 крон-скілів
 ```
 
-## Що тестується
+## Тести
 
+```bash
+pytest tests/ -v
+# 106 passed
 ```
-tests/test_arbitrage.py   - 6 тестів: buy/sell-arb, fees, volume filter, multi-outcome
-tests/test_alerts.py      - 4 тести: 5m/1h windows, cooldown, volume filter
-tests/test_extensions.py  - 12 тестів: depth math, keyword extraction, SQLite
-                           ────────
-                           22 passed in 0.25s
-```
+| Модуль | Тести |
+|--------|-------|
+| Safety | 33 |
+| Event Bus | 17 |
+| English | 11 |
+| Crypto | 9 |
+| Polymarket | 15 |
+| Coordinator | 8 |
+| Strategies / Backtest | 21 |
 
-## Документація по сферах
+## Cron (5 jobs)
 
-- [`docs/polymarket.md`](docs/polymarket.md) — арбітражна математика, API-довідник
-- [`docs/crypto.md`](docs/crypto.md) — формат звіту, пороги алертів
-- [`docs/english.md`](docs/english.md) — методика, CEFR-syllabus, Whisper
+| Job | Розклад | Тема |
+|-----|---------|------|
+| `coordinator-digest` | `0 */4 * * *` | #31 |
+| `deribit-scan` | `0 9 * * *` | #33 |
+| `lp-scan` | `0 10 * * 0` | #33 |
+| `onchain-whales` | `0 */6 * * *` | #34 |
+| `system-health` | `0 * * * *` | #34 |
+
+## Фази
+
+| Фаза | Що | Коміт |
+|------|-----|-------|
+| 0 | Safety Foundation | — |
+| 1 | Safety v2 | — |
+| 2 | Event Bus + Reaction Engine | ae4529d |
+| 3 | Backtest Framework | — |
+| 4 | Deribit + On-chain + LP | 6c86b31 |
+| 5 | Coordinator Agent | 0a110a7 |
+| 6 | Telegram Digest + Topics 31-34 + Cron | 976341e |
 
 ## Безпека
 
-- Усі секрети — лише в `.env`, ніколи в коді.
-- Polymarket private key потрібен **тільки** для виконання угод; усі read-операції публічні.
-- Telegram-бот пише лише собі (chat_id у конфігу).
-- SQLite-БД зберігається в `~/.hermes/state.db` — не в репозиторії.
+- Всі секрети в `.env`, у `.gitignore`
+- Private key Polymarket тільки для угод; read — публічний
+- Telegram delivery тільки в теми з конфігу
+- SQLite БД в `~/.hermes/state.db`
 
-## Обмеження
-
-- **Polymarket geoblock в UA.** Потрібен проксі/VPN.
-- **CoinGecko Demo** = 30 req/min — тротлінг вбудовано.
-- **xAI Grok моделі** оновлюються — звір `grok_model` у `settings.yaml` з [docs.x.ai/models](https://docs.x.ai/models).
-- **Polymarket** не має sandbox: всі ордери — реальні USDC. Для тестування лише read-операції.
-- **fees** для арбітражу зараз 0 (`fee_per_side=0`), але це може змінитися — підкручуй у конфігу.
+> ⚠️ Polymarket geoblock в UA — потрібен `POLYMARKET_PROXY` у `.env`.

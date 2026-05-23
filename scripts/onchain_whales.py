@@ -33,7 +33,7 @@ def send(msg: str, thread_id: int) -> None:
 def main() -> None:
     crypto_arg = sys.argv[1] if len(sys.argv) > 1 else "BTC"
     try:
-        from strategies.onchain_monitor import get_monitor
+        from onchain import get_monitor
         m = get_monitor()
         if crypto_arg.lower() == "all":
             for c in ["BTC", "ETH"]:

@@ -33,7 +33,7 @@ def send(msg: str, thread_id: int) -> None:
 def main() -> None:
     chain = sys.argv[1] if len(sys.argv) > 1 else "ethereum"
     try:
-        from strategies.lp_yield import get_lp_scanner
+        from lp_yield import get_lp_scanner
         scanner = get_lp_scanner()
         pools = scanner.get_pools(min_tvl=1_000_000)
         for p in pools[:2]:
