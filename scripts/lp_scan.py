@@ -40,7 +40,7 @@ def main() -> None:
             scanner.publish_pool(p)
         top = pools[:3]
         if top:
-            msg = f"📈 LP Scan ({scanner.api_chain})\n" + "\n".join(
+            msg = f"📈 LP Scan ({chain})\n" + "\n".join(
                 f"   {i+1}. {_.name}: {_.apy * 100:.2f}% APY | TVL ${_.tvl_usd:,.0f}"
                 for i, _ in enumerate(top)
             )

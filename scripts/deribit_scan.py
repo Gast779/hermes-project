@@ -35,19 +35,19 @@ def main() -> None:
     try:
         from deribit import get_deribit_analyzer
         a = get_deribit_analyzer()
-        sig = a.detect_basis_arbitrage()
-        if sig and sig.signal:
+        opps = a.find_basis_arbitrage()
+        if opps:
+            sig = opps[0]
             msg = (
-                f"🎯 Deribit Basis {sig.crypto}\n"
-                f"   Signal: {sig.signal.value}\n"
-                f"   Perp: ${sig.perpetual_price:,.0f}  Future: ${sig.future_price:,.0f}\n"
-                f"   Basis: {sig.basis * 100:.3f}%  Annualized: {sig.annualized_basis * 100:.1f}%\n"
-                f"   Funding: {sig.estimated_funding * 100:.3f}%"
+                f"🎯 Deribit Basis {sig.symbol}\n"
+                f"   Perp: ${sig.spot_price:,.0f}  Future: ${sig.futures_price:,.0f}\n"
+                f"   Basis: {sig.basis_percent:.2f}%  Annualized: {sig.funding_rate_ann:.1f}%\n"
+                f"   Funding: {sig.funding_rate_1h*100:.3f}%  Days: {sig.days_to_expiry}"
             )
             send(msg, 827)
             log.info("Sent Deribit signal")
         else:
-            log.info("No signal")
+            log.info("No Deribit signal")
     except Exception as e:
         log.error("Deribit scan failed: %s", e)
 

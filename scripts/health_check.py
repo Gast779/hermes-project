@@ -32,14 +32,16 @@ def send(msg: str, thread_id: int) -> None:
 
 def main() -> None:
     try:
-        from safety.health import get_health
-        h = get_health()
-        r = h.check_component("all")
-        if r.status == "error":
-            send(f"🚨 Health failure: {r.component} — {r.details}", 828)
-            log.warning("Health error reported")
+        from rooflow.health_monitor import HealthMonitor
+        h = HealthMonitor()
+        # Якщо є алерти — відправити
+        alerts = h.check_health()
+        if alerts:
+            msg = "🏥 Health Check\n" + "\n".join(f"   ⚠️ {a}" for a in alerts)
+            send(msg, 828)
+            log.warning("Health issues reported: %d", len(alerts))
         else:
-            log.info("Health OK")
+            log.info("Health OK — no alerts")
     except Exception as e:
         log.error("Health check failed: %s", e)
 

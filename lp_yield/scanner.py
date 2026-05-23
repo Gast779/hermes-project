@@ -207,6 +207,6 @@ class LPScanner:
         self.close()
 
 
-def get_lp_scanner() -> DefiLlamLPScanner:
+def get_lp_scanner() -> LPScanner:
     """Singleton accessor."""
-    return DefiLlamLPScanner()
+    return LPScanner()

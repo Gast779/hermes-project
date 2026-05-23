@@ -37,10 +37,10 @@ def main() -> None:
         m = get_monitor()
         if crypto_arg.lower() == "all":
             for c in ["BTC", "ETH"]:
-                m.detect_large_transactions(c)
+                m.get_whale_transactions(blockchain=c)
                 log.info("Checked whales for %s", c)
         else:
-            m.detect_large_transactions(crypto_arg)
+            m.get_whale_transactions(blockchain=crypto_arg)
             log.info("Checked whales for %s", crypto_arg)
     except Exception as e:
         log.error("On-chain whale check failed: %s", e)
