@@ -194,3 +194,8 @@ class OnChainMonitor:
 
     def __exit__(self, *args):
         self.close()
+
+
+def get_monitor() -> OnChainMonitor:
+    """Singleton accessor."""
+    return OnChainMonitor()

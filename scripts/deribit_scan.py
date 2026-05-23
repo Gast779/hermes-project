@@ -33,8 +33,8 @@ def send(msg: str, thread_id: int) -> None:
 def main() -> None:
     crypto = sys.argv[1] if len(sys.argv) > 1 else "BTC"
     try:
-        from strategies.deribit_analyzer import DeribitAnalyzer
-        a = DeribitAnalyzer()
+        from deribit import get_deribit_analyzer
+        a = get_deribit_analyzer()
         sig = a.detect_basis_arbitrage()
         if sig and sig.signal:
             msg = (

@@ -225,3 +225,8 @@ class DeribitAnalyzer:
 
     def __exit__(self, *args):
         self.close()
+
+
+def get_deribit_analyzer() -> DeribitAnalyzer:
+    """Повернути shared instance DeribitAnalyzer."""
+    return DeribitAnalyzer()
