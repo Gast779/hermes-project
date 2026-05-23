@@ -1,0 +1,128 @@
+2026-05-23 02:01:53 [INFO] httpx: HTTP Request: GET https://gamma-api.polymarket.com/markets?active=true&closed=false&limit=100&offset=0&order=volume24hr&ascending=false "HTTP/1.1 200 OK"
+2026-05-23 02:01:53 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-bitcoin-hit-150k-by-june-30-2026 - ["Ambiguous: 'by'", 'Date without timezone — UMA timestamp risk']
+2026-05-23 02:01:54 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=79404518383067636250699207593267125176497465053726445593163048268632472529865 "HTTP/1.1 200 OK"
+2026-05-23 02:01:54 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=30127331318714794964504558871031500003112836211240645095121113477237056590909 "HTTP/1.1 200 OK"
+2026-05-23 02:01:54 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: us-x-iran-permanent-peace-deal-by-may-31-2026-333-871-241-192-799-449-125 - ["Ambiguous: 'by'", 'No specific numeric criteria', 'Date without timezone — UMA timestamp risk']
+2026-05-23 02:01:54 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-uzbekistan-win-the-2026-fifa-world-cup-773 - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:01:54 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: us-x-iran-permanent-peace-deal-by-may-22-2026 - ["Ambiguous: 'by'", 'No specific numeric criteria', 'Date without timezone — UMA timestamp risk']
+2026-05-23 02:01:54 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-team-z-win-the-2026-fifa-world-cup-316 - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:01:54 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-qatar-win-the-2026-fifa-world-cup - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:01:54 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-cape-verde-win-the-2026-fifa-world-cup - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:01:54 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-jordan-win-the-2026-fifa-world-cup-233 - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:01:54 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-congo-dr-win-the-2026-fifa-world-cup - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:01:54 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-saudi-arabia-win-the-2026-fifa-world-cup - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:01:54 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-new-zealand-win-the-2026-fifa-world-cup-635 - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:01:54 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-iraq-win-the-2026-fifa-world-cup - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:01:54 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-curaao-win-the-2026-fifa-world-cup - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:01:54 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: iran-closes-its-airspace-by-may-24 - ["Ambiguous: 'by'", 'No specific numeric criteria', 'Date without timezone — UMA timestamp risk']
+2026-05-23 02:01:54 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-tunisia-win-the-2026-fifa-world-cup-165 - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:01:54 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: trump-kiss-by-may-31 - ["Ambiguous: 'by'", 'No specific numeric criteria', 'Date without timezone — UMA timestamp risk']
+2026-05-23 02:01:54 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-south-africa-win-the-2026-fifa-world-cup - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:01:55 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=11597681860870235429597254070907545244459736757984775078843998849804202568373 "HTTP/1.1 200 OK"
+2026-05-23 02:01:55 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=109296116000591997684258556601662664726138174008340113625425262738492035522172 "HTTP/1.1 200 OK"
+2026-05-23 02:01:55 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-iran-win-the-2026-fifa-world-cup-788 - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:01:55 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-colombia-win-the-2026-fifa-world-cup-734 - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:01:56 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=75845920741796858670183364159540464375486880005358999101126589340494255300090 "HTTP/1.1 200 OK"
+2026-05-23 02:01:56 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=100297578629699403208665948730031291871216767534595550828919035864255991611215 "HTTP/1.1 200 OK"
+2026-05-23 02:01:56 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-the-iran-ceasefire-continue-through-may-22 - ['No specific numeric criteria', 'Date without timezone — UMA timestamp risk']
+2026-05-23 02:01:56 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-uruguay-win-the-2026-fifa-world-cup-932 - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:01:56 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-mexico-win-the-2026-fifa-world-cup-529 - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:01:56 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: us-x-iran-permanent-peace-deal-by-may-26-2026 - ["Ambiguous: 'by'", 'No specific numeric criteria', 'Date without timezone — UMA timestamp risk']
+2026-05-23 02:01:57 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=42226352651718179722033087946280181204777449087128020043491638237602449198773 "HTTP/1.1 200 OK"
+2026-05-23 02:01:58 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=65480976061844060339371308868177173333697552544932107320629405915577941755921 "HTTP/1.1 200 OK"
+2026-05-23 02:01:58 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-the-iran-ceasefire-continue-through-may-24-733 - ['No specific numeric criteria', 'Date without timezone — UMA timestamp risk']
+2026-05-23 02:01:58 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-south-korea-win-the-2026-fifa-world-cup-485 - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:01:58 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: mlb-min-bos-2026-05-22 - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:01:58 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-the-iranian-regime-fall-by-may-31 - ["Ambiguous: 'by'", 'No specific numeric criteria', 'Date without timezone — UMA timestamp risk']
+2026-05-23 02:01:58 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-brazil-win-the-2026-fifa-world-cup-183 - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:01:58 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: iran-closes-its-airspace-by-may-31-434-443-672-526-188-756 - ["Ambiguous: 'by'", 'No specific numeric criteria', 'Date without timezone — UMA timestamp risk']
+2026-05-23 02:01:58 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=32193547092035418199824304784678017433422727066618318363087314926915969129764 "HTTP/1.1 200 OK"
+2026-05-23 02:01:59 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=11663563848070480045430729985161841310213601403387997555686450865292327172321 "HTTP/1.1 200 OK"
+2026-05-23 02:01:59 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-the-iranian-regime-fall-by-june-30 - ["Ambiguous: 'by'", 'No specific numeric criteria', 'Date without timezone — UMA timestamp risk']
+2026-05-23 02:01:59 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=58652176636090671649145952354577378456089332027744734804477771087755068360662 "HTTP/1.1 200 OK"
+2026-05-23 02:02:00 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=72629008910819960556749548962514114696748757289151285068210815898665264150948 "HTTP/1.1 200 OK"
+2026-05-23 02:02:00 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-spain-win-the-2026-fifa-world-cup-963 - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:00 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-the-us-confirm-that-aliens-exist-by-may-31 - ["Ambiguous: 'by'", 'No specific numeric criteria', 'Date without timezone — UMA timestamp risk']
+2026-05-23 02:02:00 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: dota2-aur1-tundra-2026-05-22-game2 - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:00 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: us-obtains-iranian-enriched-uranium-by-may-31-396 - ["Ambiguous: 'by'", 'No specific numeric criteria', 'Date without timezone — UMA timestamp risk']
+2026-05-23 02:02:00 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-croatia-win-the-2026-fifa-world-cup - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:00 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-canada-win-the-2026-fifa-world-cup-755 - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:00 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-ecuador-win-the-2026-fifa-world-cup-986 - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:00 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: dota2-aur1-tundra-2026-05-22-game1 - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:01 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=63606078500463046206168179986876003647651397700210851773230524698732272397502 "HTTP/1.1 200 OK"
+2026-05-23 02:02:01 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=5439360645694604481043764651204451634075250674665690111566125099887495989705 "HTTP/1.1 200 OK"
+2026-05-23 02:02:02 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=82333550650994719016339808110389313847426073918923886033931546451300666500527 "HTTP/1.1 200 OK"
+2026-05-23 02:02:02 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=65358559479619632690055959333044473452303412483016001023035774148763874619559 "HTTP/1.1 200 OK"
+2026-05-23 02:02:03 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=55294272310228351889766880115752994806305390192208463605673427046196359134349 "HTTP/1.1 200 OK"
+2026-05-23 02:02:04 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=113135855990149697483402421470647649399372199917394731055546202858224967706595 "HTTP/1.1 200 OK"
+2026-05-23 02:02:04 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=15964937114958930475076154211389704724615829754024085510491461161643812816650 "HTTP/1.1 200 OK"
+2026-05-23 02:02:05 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=57518912764901646869736803653923353418112527348011768839297304825527233482715 "HTTP/1.1 200 OK"
+2026-05-23 02:02:05 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-algeria-win-the-2026-fifa-world-cup - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:05 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: kharg-island-no-longer-under-iranian-control-by-may-31-689 - ["Ambiguous: 'by'", 'No specific numeric criteria', 'Date without timezone — UMA timestamp risk']
+2026-05-23 02:02:05 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-paraguay-win-the-2026-fifa-world-cup-967 - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:05 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-germany-win-the-2026-fifa-world-cup-467 - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:05 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-arsenal-win-the-202526-champions-league - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:05 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=55115078421062885512539156303747803058407616201213034911037320915726138659123 "HTTP/1.1 200 OK"
+2026-05-23 02:02:06 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=1910830010387565971650098373488592514702818137344973088263643820608151819241 "HTTP/1.1 200 OK"
+2026-05-23 02:02:06 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-portugal-win-the-2026-fifa-world-cup-912 - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:06 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-the-iran-ceasefire-continue-through-may-21 - ['No specific numeric criteria', 'Date without timezone — UMA timestamp risk']
+2026-05-23 02:02:06 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-the-cleveland-cavaliers-win-the-2026-nba-finals - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:06 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-usa-win-the-2026-fifa-world-cup-467 - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:07 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=27263818818572382308786837280052567231404272927433091805576135922512093801450 "HTTP/1.1 200 OK"
+2026-05-23 02:02:07 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=20970486708225968446432942645112973151689471027935743232114605753310238562505 "HTTP/1.1 200 OK"
+2026-05-23 02:02:07 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-sweden-win-the-2026-fifa-world-cup - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:08 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=49843251901555378289033703681697435310548285202017363094950264960328819956510 "HTTP/1.1 200 OK"
+2026-05-23 02:02:08 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=90316140011601445557286379621820242420352128674635418301073384643521973273096 "HTTP/1.1 200 OK"
+2026-05-23 02:02:08 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-ghana-win-the-2026-fifa-world-cup - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:08 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-switzerland-win-the-2026-fifa-world-cup - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:08 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: iran-closes-its-airspace-by-may-29 - ["Ambiguous: 'by'", 'No specific numeric criteria', 'Date without timezone — UMA timestamp risk']
+2026-05-23 02:02:08 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: us-x-iran-permanent-peace-deal-by-december-31-2026-961-587-341-574-555 - ["Ambiguous: 'by'", 'No specific numeric criteria', 'Date without timezone — UMA timestamp risk']
+2026-05-23 02:02:08 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-australia-win-the-2026-fifa-world-cup-816 - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:08 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-egypt-win-the-2026-fifa-world-cup - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:08 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-scotland-win-the-2026-fifa-world-cup - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:08 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-the-fed-decrease-interest-rates-by-50-bps-after-the-june-2026-meeting - ["Ambiguous: 'by'", 'No specific numeric criteria', 'Date without timezone — UMA timestamp risk']
+2026-05-23 02:02:09 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=80623827955373849275549292924178554747705752732514400509491610389942224429233 "HTTP/1.1 200 OK"
+2026-05-23 02:02:10 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=59747939229616122028703183496845224441569451604438512096218703231539011010596 "HTTP/1.1 200 OK"
+2026-05-23 02:02:10 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-japan-win-the-2026-fifa-world-cup-112 - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:10 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=94559586571241563470235664821564670251180951772614764383113614156422396181162 "HTTP/1.1 200 OK"
+2026-05-23 02:02:11 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=90772332434487149264114862115632028379978765245278600275169585501290867536237 "HTTP/1.1 200 OK"
+2026-05-23 02:02:11 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=106800748430427674959569572153064227410031598235078843518451609787766575422832 "HTTP/1.1 200 OK"
+2026-05-23 02:02:12 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=957189473355253725682042065616427467364883529990466453354716103472330781161 "HTTP/1.1 200 OK"
+2026-05-23 02:02:13 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=27008751809233926148050516156613422072861376679003833876404203364321864494710 "HTTP/1.1 200 OK"
+2026-05-23 02:02:13 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=6795252892117728045960041504116549009113251233821552587121784745784369010423 "HTTP/1.1 200 OK"
+2026-05-23 02:02:14 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=27725940653624584419402352523079290062969537031166811897465708046373420997774 "HTTP/1.1 200 OK"
+2026-05-23 02:02:14 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=70599542532871511059574704954153700290799668003780454021485405353625366389155 "HTTP/1.1 200 OK"
+2026-05-23 02:02:14 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: microstrategy-sells-any-bitcoin-by-may-31-2026 - ["Ambiguous: 'by'", 'No specific numeric criteria', 'Date without timezone — UMA timestamp risk']
+2026-05-23 02:02:15 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=46130022848920611732202507184264902690726361824951579816156441452797397798181 "HTTP/1.1 200 OK"
+2026-05-23 02:02:16 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=77669758102929718590160851391714019116736856202333459817343190730743895177270 "HTTP/1.1 200 OK"
+2026-05-23 02:02:16 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: iran-closes-its-airspace-by-june-30-432-786-462-866 - ["Ambiguous: 'by'", 'No specific numeric criteria', 'Date without timezone — UMA timestamp risk']
+2026-05-23 02:02:16 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=78782225771232786807917840636148692693319364096615775006632220874941000655612 "HTTP/1.1 200 OK"
+2026-05-23 02:02:17 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=69643717759253237301859887103757750815547548769467400713121571182866070782157 "HTTP/1.1 200 OK"
+2026-05-23 02:02:17 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=67174616612482732215000423053704649844944247495240433035456966357940612624912 "HTTP/1.1 200 OK"
+2026-05-23 02:02:18 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=965182493841413150285799286432950778675594422558336547997120589355694971712 "HTTP/1.1 200 OK"
+2026-05-23 02:02:18 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-france-win-the-2026-fifa-world-cup-924 - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:18 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-ivory-coast-win-the-2026-fifa-world-cup - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:18 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-turkiye-win-the-2026-fifa-world-cup - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:18 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-morocco-win-the-2026-fifa-world-cup-464 - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:19 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=91854985881660528719554182181915154947889512036247366723329775304927062633959 "HTTP/1.1 200 OK"
+2026-05-23 02:02:19 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=7784444756463551795275786218528075027473726541845761676672950693985949090846 "HTTP/1.1 200 OK"
+2026-05-23 02:02:19 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-cho-eun-hee-win-the-2026-seoul-mayoral-election - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:19 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: kharg-island-no-longer-under-iranian-control-by-june-30-561-854 - ["Ambiguous: 'by'", 'No specific numeric criteria', 'Date without timezone — UMA timestamp risk']
+2026-05-23 02:02:19 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-austria-win-the-2026-fifa-world-cup - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:20 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=100946590963242540057705649621171009395063231710770062072767755905111148084588 "HTTP/1.1 200 OK"
+2026-05-23 02:02:20 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=104769620297377045615249609203204779133697237624883370812834354531037095625796 "HTTP/1.1 200 OK"
+2026-05-23 02:02:20 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-senegal-win-the-2026-fifa-world-cup - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:21 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=66126499509109503882527587397580847380552807783469118232692069046963725214920 "HTTP/1.1 200 OK"
+2026-05-23 02:02:22 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=115374538162714194443439522409685192483459174597066538188991073244415139493179 "HTTP/1.1 200 OK"
+2026-05-23 02:02:22 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: us-x-iran-permanent-peace-deal-by-june-30-2026-837-641-896-877-363-892-537 - ["Ambiguous: 'by'", 'No specific numeric criteria', 'Date without timezone — UMA timestamp risk']
+2026-05-23 02:02:22 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=2068182345374233381500349634769702301404616373299461128760753567515838943706 "HTTP/1.1 200 OK"
+2026-05-23 02:02:23 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=4460969833644996380897830785889708124957087889440060951167469221501810070187 "HTTP/1.1 200 OK"
+2026-05-23 02:02:23 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=39971135635688582888871345774543396726713518409830551935516505940987034179544 "HTTP/1.1 200 OK"
+2026-05-23 02:02:24 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=99925724520019197054927897531825658954708044522463628528319184782146526578035 "HTTP/1.1 200 OK"
+2026-05-23 02:02:24 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-the-fed-increase-interest-rates-by-50-bps-after-the-june-2026-meeting - ["Ambiguous: 'by'", 'No specific numeric criteria', 'Date without timezone — UMA timestamp risk']
+2026-05-23 02:02:24 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: microstrategy-sells-any-bitcoin-by-june-30-2026 - ["Ambiguous: 'by'", 'No specific numeric criteria', 'Date without timezone — UMA timestamp risk']
+2026-05-23 02:02:24 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-tarcisio-de-frietas-win-the-2026-brazilian-presidential-election - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:24 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-bosnia-herzegovina-win-the-2026-fifa-world-cup - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:24 [INFO] polymarket_analyzer.arbitrage_internal: Skip risky market: will-netherlands-win-the-2026-fifa-world-cup-739 - ["Ambiguous: 'win'", 'No specific numeric criteria']
+2026-05-23 02:02:25 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=113101257407871620178434768855540120619555585444386957666416128096332241586796 "HTTP/1.1 200 OK"
+2026-05-23 02:02:25 [INFO] httpx: HTTP Request: GET https://clob.polymarket.com/book?token_id=12525747779077170526506634490540667493798818721650247317008109451580204966355 "HTTP/1.1 200 OK"

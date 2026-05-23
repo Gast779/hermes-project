@@ -25,7 +25,10 @@ def send_telegram(
     token = os.getenv("TELEGRAM_BOT_TOKEN")
     if not chat_id:
         chat_id = os.getenv("TELEGRAM_CHAT_ID")
-    if not token or not chat_id:
+    # fallback hard-coded
+    if not chat_id:
+        chat_id = "-1003792129186"
+    if not token:
         log.warning("Telegram credentials missing; skipping notification.")
         return False
     if not text or not text.strip():
