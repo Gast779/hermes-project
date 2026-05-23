@@ -1,11 +1,28 @@
 """Форматування звітів по Polymarket у Markdown."""
 from __future__ import annotations
 
+import sqlite3
+from pathlib import Path
 from typing import Iterable
 
 from .arbitrage_internal import ArbitrageOpportunity
 from .cross_market import Discrepancy
 from .topic_monitor import TopicReport
+
+
+KB_PATH = Path(__file__).parent.parent / "hermes_knowledge_base.db"
+
+
+def _get_translation(en_text: str, table: str = "market_translations") -> str:
+    """Переклад з KB. Якщо нема — повертає оригінал."""
+    try:
+        conn = sqlite3.connect(KB_PATH)
+        cur = conn.execute(f"SELECT uk FROM {table} WHERE en = ?", (en_text,))
+        row = cur.fetchone()
+        conn.close()
+        return row[0] if row else en_text
+    except Exception:
+        return en_text
 
 
 # --------------------------------------------------------------------------- #
@@ -67,13 +84,20 @@ def format_topic_report(report: TopicReport) -> str:
         ]
         for m in sorted(report.markets, key=lambda x: x.volume_usd, reverse=True)[:10]:
             url = _slug_url(m.slug)
-            title = f"[{_short_question(m.question, 60)}]({url})" if url else _short_question(m.question, 60)
+            title_en = _short_question(m.question, 60)
+            title_uk = _get_translation(m.question)
+            if title_uk != m.question:
+                title = f"[{title_en}]({url})\n   _{title_uk}_" if url else f"{title_en}\n   _{title_uk}_"
+            else:
+                title = f"[{title_en}]({url})" if url else title_en
             outc = " / ".join(
                 f"{o.name}: `{o.price:.3f}`" if o.price is not None else f"{o.name}: —"
                 for o in m.outcomes
             )
             lines.append(f"| {title} | {outc} | ${m.volume_usd:,.0f} |")
         lines.append("")
+
+    lines.append(f"👁️ Моніторинг активний: {len(report.markets)} ринків за ключовим словом «{report.keyword}» відстежуються.")
 
     if report.significant_changes:
         lines += [

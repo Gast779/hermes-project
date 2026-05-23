@@ -22,7 +22,7 @@ def send_telegram(
     chat_id: str | None = None,
     message_thread_id: int | None = None,
 ) -> bool:
-    token = os.getenv("TELEGRAM_BOT_TOKEN")
+    token = (os.getenv("TELEGRAM_BOT_TOKEN") or "").strip()
     if not chat_id:
         chat_id = os.getenv("TELEGRAM_CHAT_ID")
     # fallback hard-coded
