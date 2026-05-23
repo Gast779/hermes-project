@@ -8,7 +8,7 @@
 |---|-------|-----------|---------------|
 | 1 | 🇬🇧 **english_learning_bot** | AI-тренер англійської (Grok + Whisper) | #24 |
 | 2 | 💰 **crypto_monitor** | CoinGecko звіти 3×/день + fast movers | #25, #26 |
-| 3 | 🎯 **polymarket_analyzer** | Арбітраж, deep scan, cross-market, news linker, topic monitor | #27–#30 |
+| 3 | 🎯 **polymarket_analyzer** | Арбітраж, deep scan, cross-market, news linker, topic monitor, **whale detection** | #27–#30, **#35** |
 | 4 | 🏦 **strategy_engine** | Deribit basis, on-chain whales, LP yield | #32–#34 |
 | 5 | 🧠 **coordinator** | Композитний digest: зважена оцінка з усіх сигналів | #31 |
 
@@ -27,6 +27,7 @@
 | **32** | **📈 Backtest Reports** | **Win rate, sharpe, drawdown** |
 | **33** | **🎯 Strategy Signals** | **Deribit + On-chain + LP** |
 | **34** | **🚨 General Alerts** | **Критичні cross-agent + health** |
+| **35** | **🐋 Whale Alerts** | **Polymarket insider/whale detection (composite score, 10 signals)** |
 
 ## CLI координатора
 
@@ -43,6 +44,29 @@ python main.py lp scan [ethereum|arbitrum]       # LP pools по APY
 python main.py backtest                          # backtest 4 стратегій
 ```
 
+## 🐋 Polymarket Whale Detection
+
+Виявлення підозрілих угод на Polymarket (insider signals, volume spikes, fresh wallets):
+
+```bash
+python main.py polymarket whale scan                     # одноразове сканування
+python main.py polymarket whale scan --notify            # з Telegram сповіщеннями
+python main.py polymarket whale watch --notify           # безперервний моніторинг
+```
+
+## 🇬🇧 English v2.0
+
+- **CEFR Adaptive**: A1 → C2 з автоматичним регулюванням рівня
+- **SRS SM-2**: Spaced Repetition з алгоритмом SuperMemo-2
+- **Error Pattern Tracking**: Персоналізовані вправи на слабкі місця
+- **i+1 Comprehensible Input**: Матеріали трохи складніші за поточний рівень
+
+```bash
+python main.py english lesson --level B1 --topic business   # урок за рівнем і темою
+python main.py english review                              # повторення карток
+python main.py english stats                               # статистика прогресу
+```
+
 ## Бектест
 
 ```bash
@@ -57,9 +81,14 @@ python main.py backtest --compare    # порівняти стратегії
 
 ```
 hermes_project/
-├── english_bot/              # AI-тренер англійської
+├── hermes_knowledge_base.db  # SQLite KB (v2.0): інсайдери, помилки, сесії, аналітика
+├── english_bot/
+│   ├── ...                    # AI-тренер
+│   └── english_bot_upgrade.py # CEFR Adaptive + SRS SM-2 (v2.0)
 ├── crypto_monitor/           # CoinGecko + алерти
-├── polymarket_analyzer/      # Gamma + CLOB + cross-market
+├── polymarket_analyzer/
+│   ├── ...                    # Gamma + CLOB + cross-market
+│   └── whale_detector.py      # Whale & insider detection (v2.0)
 ├── deribit/                  # Basis arbitrage + funding
 ├── onchain/                  # Whale transactions
 ├── lp_yield/                 # DeFiLlama LP scanner
@@ -119,6 +148,7 @@ pytest tests/ -v
 | 4 | Deribit + On-chain + LP | 6c86b31 |
 | 5 | Coordinator Agent | 0a110a7 |
 | 6 | Telegram Digest + Topics 31-34 + Cron | 976341e |
+| **7** | **HERMES v2.0: Whale Detection + English CEFR + KB** | **9940ee7** |
 
 ## Безпека
 
