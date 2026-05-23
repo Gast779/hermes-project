@@ -96,6 +96,15 @@ topics:
     skills:
       - general_alerts
 
+  # Phase 7: HERMES v2.0 — Whale Alerts
+  whale_alerts:
+    name: "🐋 Whale Alerts"
+    description: "Polymarket insider/whale detection (composite score, 10 signals)"
+    thread_id: 35
+    icon: "🐋"
+    skills:
+      - whale_detection
+
 # Default topic for unmatched skills
 default_topic: english_learning_bot
 
