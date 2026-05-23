@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
-"""Wrapper: run coordinator digest generation + delivery."""
+"""🧠 Coordinator Digest → Telegram #824.
+
+Usage:
+    python scripts/coordinator_digest.py
+"""
 from __future__ import annotations
 
 import logging
 import os
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
+log = logging.getLogger(__name__)
 
-from coordination.coordinator import get_coordinator
 
 def main() -> None:
-    coord = get_coordinator()
-    coord.publish_digest()
-    print("✅ Coordinator digest published to event bus")
-
-    # Also try Telegram delivery
     try:
         from coordination.deliver import deliver_coordinator_digest
         deliver_coordinator_digest()
     except Exception as e:
-        print(f"⚠️ Telegram delivery skipped: {e}")
+        log.error("Coordinator digest failed: %s", e)
+
 
 if __name__ == "__main__":
     main()

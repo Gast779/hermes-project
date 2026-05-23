@@ -57,6 +57,42 @@ skills:
     description: "Моніторинг ринків Polymarket за обраною темою"
     entrypoint: "main:polymarket_topic_job"
     enabled: true
-    schedule: "0 */4 * * *"                # кожні 4 год
+    schedule: "0 */4 * * *"
     config:
       keyword: "trump"
+
+  # Phase 5-6: Coordinator + Strategies
+  - id: coordinator_digest
+    name: "Coordinator Digest"
+    description: "Композитний digest від Coordinator кожні 4 години → #824"
+    entrypoint: "scripts/coordinator_digest.py"
+    enabled: true
+    schedule: "0 */4 * * *"
+
+  - id: deribit_scan
+    name: "Deribit Basis Scan"
+    description: "Сканування basis arbitrage на Deribit → #827"
+    entrypoint: "scripts/deribit_scan.py"
+    enabled: true
+    schedule: "0 9 * * *"
+
+  - id: lp_scan
+    name: "LP Yield Scan"
+    description: "Сканування LP пулів по APY → #827"
+    entrypoint: "scripts/lp_scan.py"
+    enabled: true
+    schedule: "0 10 * * 0"
+
+  - id: onchain_whales
+    name: "On-chain Whale Monitor"
+    description: "Моніторинг великих транзакцій → #828"
+    entrypoint: "scripts/onchain_whales.py"
+    enabled: true
+    schedule: "0 */6 * * *"
+
+  - id: system_health
+    name: "System Health Check"
+    description: "Перевірка health всіх компонентів → #828"
+    entrypoint: "scripts/health_check.py"
+    enabled: true
+    schedule: "0 * * * *"
